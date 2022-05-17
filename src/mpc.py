@@ -15,7 +15,7 @@ import sys
 sys.path.append('../../')
 
 import matplotlib.pyplot as plt
-#from casadi import *
+from casadi import *
 
 # Import do_mpc package:
 import do_mpc
@@ -40,8 +40,11 @@ class MPC:
         drive_topic = '/nav'
 
         self.lidar_sub = rospy.Subscriber(lidarscan_topic, LaserScan, self.lidar_callback)#TODO: Subscribe to LIDAR
+        
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)#TODO: Publish to drive
-        #self.initialize_mpc()
+        #self.get_mpc_step()
+        self.initialize_mpc()
+        
 
     def getRange(self, data, angle):
         # data: single message from topic /scan
@@ -62,7 +65,7 @@ class MPC:
         drive_msg.header.stamp = rospy.Time.now()
         drive_msg.header.frame_id = "laser"
         drive_msg.drive.steering_angle = delta
-        drive_msg.drive.accelleration = a
+        drive_msg.drive.acceleration = a
         self.drive_pub.publish(drive_msg)
 
     def followLeft(self, data, leftDist):
@@ -76,7 +79,7 @@ class MPC:
         error = 0.0 #TODO: replace with error returned by followLeft
         #send error to pid_control
         #self.pid_control(error, VELOCITY)
-        #self.get_mpc_step()
+        self.get_mpc_step()
 
     def initialize_mpc(self):
         rospy.loginfo("Initialising  MPC")
@@ -182,7 +185,7 @@ class MPC:
 
         self.mpc.x0 = state_0
         self.simulator.x0 = state_0
-        roospy.loginfo(self.mpc.x0)
+        
 
 
 
@@ -195,10 +198,13 @@ class MPC:
 
         self.u0 = np.zeros((2,1))
         self.x0=self.simulator.x0
+        rospy.loginfo("MPC set up finished")
         
 
 def main(args):
+    
     rospy.init_node("mpc_node", anonymous=True)
+    rospy.loginfo("starting up mpc node")
     mpc = MPC()
     rospy.sleep(0.1)
     rospy.spin()
