@@ -1,8 +1,6 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python3
 """
 Created on Thu May 12 12:06:18 2022
-
 @author: Fiona
 """
 from __future__ import print_function
@@ -17,7 +15,7 @@ import sys
 sys.path.append('../../')
 
 import matplotlib.pyplot as plt
-from casadi import *
+#from casadi import *
 
 # Import do_mpc package:
 import do_mpc
@@ -43,7 +41,7 @@ class MPC:
 
         self.lidar_sub = rospy.Subscriber(lidarscan_topic, LaserScan, self.lidar_callback)#TODO: Subscribe to LIDAR
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)#TODO: Publish to drive
-        self.initialize_mpc()
+        #self.initialize_mpc()
 
     def getRange(self, data, angle):
         # data: single message from topic /scan
@@ -54,10 +52,12 @@ class MPC:
         return 0.0
 
     def get_mpc_step(self):
-        self.u0 = mpc.make_step(x0)
-        self.x0 = simulator.make_step(u0)
-        delta=u0[0]
-        a=u0[1]
+        '''
+        self.u0 = self.mpc.make_step(x0)
+        self.x0 = self.simulator.make_step(u0)
+        '''
+        delta=0#self.u0[0]
+        a=0#self.u0[1]
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()
         drive_msg.header.frame_id = "laser"
@@ -76,9 +76,10 @@ class MPC:
         error = 0.0 #TODO: replace with error returned by followLeft
         #send error to pid_control
         #self.pid_control(error, VELOCITY)
-        mpc.get_mpc_step()
+        #self.get_mpc_step()
 
     def initialize_mpc(self):
+        rospy.loginfo("Initialising  MPC")
         model_type = 'discrete' # either 'discrete' or 'continuous'
         self.model = do_mpc.model.Model(model_type)
 
@@ -181,6 +182,7 @@ class MPC:
 
         self.mpc.x0 = state_0
         self.simulator.x0 = state_0
+        roospy.loginfo(self.mpc.x0)
 
 
 
@@ -193,6 +195,7 @@ class MPC:
 
         self.u0 = np.zeros((2,1))
         self.x0=self.simulator.x0
+        
 
 def main(args):
     rospy.init_node("mpc_node", anonymous=True)
@@ -208,7 +211,7 @@ if __name__=='__main__':
 
 
 
-
+'''
 
 for k in range(10):
   u0 = mpc.make_step(x0)
@@ -231,4 +234,5 @@ mpc_graphics.add_line(var_type='_u', var_name='a', axis=ax[1])
 
 
 mpc_graphics.add_line(var_type='_u', var_name='delta', axis=ax[2])
+'''
 
