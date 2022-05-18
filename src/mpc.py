@@ -26,10 +26,11 @@ import rospy
 from sensor_msgs.msg import Image, LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
-#WALL FOLLOW PARAMS
+#PARAMS
 ANGLE_RANGE = 270 # Hokuyo 10LX has 270 degrees scan
 VELOCITY = 2.00 # meters per second
 CAR_LENGTH = 0.50 # Traxxas Rally is 20 inches or 0.5 meters
+
 
 class MPC:
     """ Implement Wall Following on the car
@@ -55,16 +56,17 @@ class MPC:
         return 0.0
 
     def get_mpc_step(self):
-        '''
-        self.u0 = self.mpc.make_step(x0)
-        self.x0 = self.simulator.make_step(u0)
-        '''
-        delta=0#self.u0[0]
-        a=0#self.u0[1]
+        
+        self.u0 = self.mpc.make_step(self.x0)
+        self.x0 = self.simulator.make_step(self.u0)
+        
+        delta=self.u0[0]
+        a=self.u0[1]
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()
         drive_msg.header.frame_id = "laser"
         drive_msg.drive.steering_angle = delta
+        drive_msg.drive.speed=1
         drive_msg.drive.acceleration = a
         self.drive_pub.publish(drive_msg)
 
@@ -199,13 +201,22 @@ class MPC:
         self.u0 = np.zeros((2,1))
         self.x0=self.simulator.x0
         rospy.loginfo("MPC set up finished")
+        delta=1
+        a=1
+        drive_msg = AckermannDriveStamped()
+        drive_msg.header.stamp = rospy.Time.now()
+        drive_msg.header.frame_id = "laser"
+        drive_msg.drive.steering_angle = delta
+        drive_msg.drive.acceleration = a
+        self.drive_pub.publish(drive_msg)
+
         
 
 def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    mpc = MPC()
+    model_predictive_control = MPC()
     rospy.sleep(0.1)
     rospy.spin()
 

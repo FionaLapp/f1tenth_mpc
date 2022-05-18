@@ -6,7 +6,7 @@
 -->
 
   <!-- Launch a map from the maps folder-->
-  <arg name="map" default="$(find f1tenth_mpc)/src/maps/Sochi/Sochi_map.yaml"/>
+  <arg name="map" default="$(find f1tenth_mpc)/src/maps/Empty/Empty_map.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
 
   <!-- Launch the racecar model -->
@@ -41,11 +41,11 @@
 
   <!-- ***Put launch command for new planner here:-->
   <!-- Launch the New Planner Node -->
-	<!--
-  <node pkg="wall_follow" name="wall_follow_2" type="wall_follow.py">
+	
+  <node pkg="f1tenth_mpc" name="mpc" type="mpc.py">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
   	 </node> 
--->
+
 
   
   <!-- Launch RVIZ -->
