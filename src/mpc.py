@@ -27,6 +27,8 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
+from std_msgs.msg import String, ColorRGBA
+from visualization_msgs.msg import Marker
 
 
 
@@ -34,18 +36,46 @@ class MPC:
     """ Implement Wall Following on the car
     """
     def __init__(self):
-        self.params=self.get_params()
-        self.dummy_velocity=1
-        self.initialize_mpc()
+
         #Topics & Subs, Pubs
         lidarscan_topic = '/scan'
         odometry_topic= '/odom'
         drive_topic = '/nav'
+        debug_topic= '/debug'
+        pathline_topic='/path_lines'
+
+        self.params=self.get_params()
+        self.dummy_velocity=1
+        self.goal=[10,1]
+        self.pathline_pub=rospy.Publisher(pathline_topic, Marker, queue_size=1)
+        #self.visualise_goal(self.goal)
+        
+        self.initialize_mpc()
+        
         #self.lidar_sub = rospy.Subscriber(lidarscan_topic, LaserScan, self.lidar_callback)#TODO: Subscribe to LIDAR
         self.odom_sub=rospy.Subscriber(odometry_topic, Odometry, self.odometry_callback)#TODO: Subscribe to LIDAR
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)#TODO: Publish to drive
+        self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
         
-        
+
+    def visualise_goal(self, goal):
+        goal_msg=Marker()
+        goal_msg.header.stamp = rospy.Time.now()
+        goal_msg.header.frame_id = "goal"
+        goal_msg.id=1
+        goal_msg.color=  ColorRGBA()
+        goal_msg.color.r=255
+        goal_msg.color.g=0
+        goal_msg.color.b=0
+        goal_msg.color.a=100
+        goal_msg.type=goal_msg.SPHERE
+        goal_msg.action = goal_msg.ADD
+        goal_msg.pose.position.x = self.goal[0]
+        goal_msg.pose.position.y = self.goal[1]
+        goal_msg.pose.position.z = 0
+        #goal_msg.lifetime=0
+        self.pathline_pub.publish(goal_msg)
+        #self.debug_pub.publish("Published goal")
 
     def get_params(self):
         #I quite possibly came up with the worst way to do this
@@ -81,8 +111,8 @@ class MPC:
         u = self.mpc.make_step(x_state)
         #x = self.simulator.make_step(u0) #TODO add real measurement here
         
-        delta=self.u0[0]
-        a=self.u0[1]
+        delta=u[0]
+        a=u[1]
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()
         drive_msg.header.frame_id = "laser"
@@ -90,6 +120,7 @@ class MPC:
         drive_msg.drive.speed=self.dummy_velocity
         drive_msg.drive.acceleration = a
         self.drive_pub.publish(drive_msg)
+        #self.visualise_goal(x_state)
 
     def followLeft(self, data, leftDist):
         #Follow left wall as per the algorithm
@@ -99,22 +130,24 @@ class MPC:
     def odometry_callback(self, data):
         """
         """
-        error = 0.0 #TODO: replace with error returned by followLeft
-        #send error to pid_control
-        #self.pid_control(error, VELOCITY)
+        
         car_state=self.get_state_from_data(data)
-        x0=np.array([car_state[0],
-                            car_state[1],
-                            car_state[2],
-                            0
-                            ])
-        self.get_mpc_step(x0)
+        
+
+        self.get_mpc_step(car_state)
 
     def get_state_from_data(self, data):
         x=data.pose.pose.position.x
         y=data.pose.pose.position.y
         v= self.dummy_velocity
-        return [x,y, v]
+        phi=2*np.arcsin(data.pose.pose.position.z)
+        #also_phi=2*np.arccos(data.pose.pose.position.w)
+        #self.debug_pub.publish("phi")
+        #self.debug_pub.publish(String(data.pose.pose.position))
+        #self.debug_pub.publish("")
+        
+        return np.array([x,y, v, phi])
+
 
     def initialize_mpc(self):
         rospy.loginfo("Initialising  MPC")
@@ -175,8 +208,8 @@ class MPC:
 
         #objective function
         #TODO
-        x_f   = 50
-        y_f   = 20
+        x_f   = self.goal[0]
+        y_f   = self.goal[1]
         v_f   =  0
         psi_f = -np.pi/2
 
