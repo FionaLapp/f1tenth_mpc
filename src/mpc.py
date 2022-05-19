@@ -23,6 +23,7 @@ import do_mpc
 
 #ROS Imports
 import rospy
+from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 
@@ -33,15 +34,18 @@ class MPC:
     """ Implement Wall Following on the car
     """
     def __init__(self):
+        self.params=self.get_params()
+        self.dummy_velocity=1
+        self.initialize_mpc()
         #Topics & Subs, Pubs
         lidarscan_topic = '/scan'
+        odometry_topic= '/odom'
         drive_topic = '/nav'
-        self.params=self.get_params()
-        self.lidar_sub = rospy.Subscriber(lidarscan_topic, LaserScan, self.lidar_callback)#TODO: Subscribe to LIDAR
-        
+        #self.lidar_sub = rospy.Subscriber(lidarscan_topic, LaserScan, self.lidar_callback)#TODO: Subscribe to LIDAR
+        self.odom_sub=rospy.Subscriber(odometry_topic, Odometry, self.odometry_callback)#TODO: Subscribe to LIDAR
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)#TODO: Publish to drive
-        #self.get_mpc_step()
-        self.initialize_mpc()
+        
+        
 
     def get_params(self):
         #I quite possibly came up with the worst way to do this
@@ -72,18 +76,10 @@ class MPC:
         params['scan_distance_to_base_link']= rospy.get_param(namespace+'scan_distance_to_base_link', 0.275) # meters
         return params    
 
-    def getRange(self, data, angle):
-        # data: single message from topic /scan
-        # angle: between -45 to 225 degrees, where 0 degrees is directly to the right
-        # Outputs length in meters to object with angle in lidar scan field of view
-        #make sure to take care of nans etc.
-        #TODO: implement
-        return 0.0
-
-    def get_mpc_step(self):
+    def get_mpc_step(self, x_state):
         
-        self.u0 = self.mpc.make_step(self.x0)
-        self.x0 = self.simulator.make_step(self.u0)
+        u = self.mpc.make_step(x_state)
+        #x = self.simulator.make_step(u0) #TODO add real measurement here
         
         delta=self.u0[0]
         a=self.u0[1]
@@ -91,7 +87,7 @@ class MPC:
         drive_msg.header.stamp = rospy.Time.now()
         drive_msg.header.frame_id = "laser"
         drive_msg.drive.steering_angle = delta
-        drive_msg.drive.speed=1
+        drive_msg.drive.speed=self.dummy_velocity
         drive_msg.drive.acceleration = a
         self.drive_pub.publish(drive_msg)
 
@@ -100,13 +96,25 @@ class MPC:
         #TODO:implement
         return 0.0
 
-    def lidar_callback(self, data):
+    def odometry_callback(self, data):
         """
         """
         error = 0.0 #TODO: replace with error returned by followLeft
         #send error to pid_control
         #self.pid_control(error, VELOCITY)
-        self.get_mpc_step()
+        car_state=self.get_state_from_data(data)
+        x0=np.array([car_state[0],
+                            car_state[1],
+                            car_state[2],
+                            0
+                            ])
+        self.get_mpc_step(x0)
+
+    def get_state_from_data(self, data):
+        x=data.pose.pose.position.x
+        y=data.pose.pose.position.y
+        v= self.dummy_velocity
+        return [x,y, v]
 
     def initialize_mpc(self):
         rospy.loginfo("Initialising  MPC")
@@ -221,21 +229,14 @@ class MPC:
         # Set initial guess for MHE/MPC based on initial state.
         self.mpc.set_initial_guess()
 
-        mpc_graphics = do_mpc.graphics.Graphics(self.mpc.data)
-        sim_graphics = do_mpc.graphics.Graphics(self.simulator.data)
+        #mpc_graphics = do_mpc.graphics.Graphics(self.mpc.data)
+        #sim_graphics = do_mpc.graphics.Graphics(self.simulator.data)
 
 
         self.u0 = np.zeros((2,1))
         self.x0=self.simulator.x0
         rospy.loginfo("MPC set up finished")
-        delta=1
-        a=1
-        drive_msg = AckermannDriveStamped()
-        drive_msg.header.stamp = rospy.Time.now()
-        drive_msg.header.frame_id = "laser"
-        drive_msg.drive.steering_angle = delta
-        drive_msg.drive.acceleration = a
-        self.drive_pub.publish(drive_msg)
+        
 
         
 
