@@ -42,7 +42,7 @@
   <!-- ***Put launch command for new planner here:-->
   <!-- Launch the New Planner Node -->
 	
-  <node pkg="f1tenth_mpc" name="mpc" type="mpc.py">
+  <node pkg="f1tenth_mpc" name="mpc" type="mpc.py" >
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
   	 </node> 
 
@@ -50,4 +50,7 @@
   
   <!-- Launch RVIZ -->
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_simulator)/launch/simulator.rviz" output="screen"/>
+    
+    <!-- Launch Hector Slam -->
+  
 </launch>
