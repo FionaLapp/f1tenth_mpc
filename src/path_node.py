@@ -25,7 +25,9 @@ from visualization_msgs.msg import Marker
 
 class DesiredPath:
     def __init__(self):
-        pathfile_name=os.getcwd()+'/src/maps/Sochi/Sochi_raceline.csv'
+
+        
+        pathfile_name=rospy.get_param('/path_node/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
         path_data=pd.read_csv(pathfile_name)
         #rospy.loginfo(path_data.head())
         #Topics & Subs, Pubs

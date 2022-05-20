@@ -6,7 +6,7 @@
 -->
 
   <!-- Launch a map from the maps folder-->
-  <arg name="map" default="$(find f1tenth_mpc)/src/maps/Empty/Empty_map.yaml"/>
+  <arg name="map" default="$(find f1tenth_mpc)/src/maps/Sochi/Sochi_map.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
 
   <!-- Launch the racecar model -->
@@ -45,6 +45,12 @@
   <node pkg="f1tenth_mpc" name="mpc" type="mpc.py">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
   	 </node> 
+<!-- Launch path node -->
+<node pkg="f1tenth_mpc" name="path_node" type="path_node.py" output="screen">
+          <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+          
+          <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
+  	 </node> 
 
   <!-- Launch RVIZ -->
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>
@@ -55,5 +61,8 @@
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
    	<rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	 </node> 
+  	 
+  
+  
   
 </launch>

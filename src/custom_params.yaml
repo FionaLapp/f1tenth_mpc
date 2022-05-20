@@ -1,3 +1,5 @@
 
 trajectory_update_rate: 8
 trajectory_publish_rate: 8
+directory: ~/ws/src/f1tenth_mpc
+
