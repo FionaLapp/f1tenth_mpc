@@ -7,6 +7,7 @@ from __future__ import print_function
 import sys
 import math
 import numpy as np
+import pandas as pd
 
 
 #MPC imports
@@ -36,45 +37,43 @@ class MPC:
     """ Implement Wall Following on the car
     """
     def __init__(self):
-
+        self.params=self.get_params()
+        self.setup_mpc()
+        self.setup_node()
+    def setup_node(self):
         #Topics & Subs, Pubs
-        lidarscan_topic = '/scan'
         odometry_topic= '/odom'
         drive_topic = '/nav'
         debug_topic= '/debug'
-        pathline_topic='/path_lines'
+        arrow_topic='/velocity'
+        path_topic='/goal_path'
 
-        self.params=self.get_params()
+        
         self.dummy_velocity=1
         self.goal=[10,1]
-        self.pathline_pub=rospy.Publisher(pathline_topic, Marker, queue_size=1)
+        self.arrow_pub=rospy.Publisher(arrow_topic, Marker, queue_size=1)
         #self.visualise_goal(self.goal)
-        
-        self.initialize_mpc()
-        
+
         #self.lidar_sub = rospy.Subscriber(lidarscan_topic, LaserScan, self.lidar_callback)#TODO: Subscribe to LIDAR
         self.odom_sub=rospy.Subscriber(odometry_topic, Odometry, self.odometry_callback)#TODO: Subscribe to LIDAR
+        self.path_sub=rospy.Subscriber(path_topic, Odometry, self.path_callback)#TODO: Subscribe to LIDAR
+        
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)#TODO: Publish to drive
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
-        
 
-    def visualise_goal(self, goal):
-        goal_msg=Marker()
-        goal_msg.header.stamp = rospy.Time.now()
-        goal_msg.header.frame_id = "goal"
-        goal_msg.id=1
-        goal_msg.color=  ColorRGBA()
-        goal_msg.color.r=255
-        goal_msg.color.g=0
-        goal_msg.color.b=0
-        goal_msg.color.a=100
-        goal_msg.type=goal_msg.SPHERE
-        goal_msg.action = goal_msg.ADD
-        goal_msg.pose.position.x = self.goal[0]
-        goal_msg.pose.position.y = self.goal[1]
-        goal_msg.pose.position.z = 0
-        #goal_msg.lifetime=0
-        self.pathline_pub.publish(goal_msg)
+
+    def visualise_arrow(self, point):
+        arrow_msg=Marker()
+        arrow_msg.header.stamp = rospy.Time.now()
+        arrow_msg.header.frame_id = "base_link"
+        arrow_msg.type=arrow_msg.ARROW
+        arrow_msg.action = arrow_msg.ADD
+        arrow_msg.pose.orientation.z = point[0]
+        arrow_msg.pose.orientation.w = point[1]
+        arrow_msg.scale.x = 10
+
+        #arrow_msg.lifetime=0
+        self.arrow_pub.publish(arrow_msg)
         #self.debug_pub.publish("Published goal")
 
     def get_params(self):
@@ -108,7 +107,7 @@ class MPC:
 
     def get_mpc_step(self, x_state):
         
-        u = self.mpc.make_step(x_state)
+        u = self.controller.make_step(x_state)
         #x = self.simulator.make_step(u0) #TODO add real measurement here
         
         delta=u[0]
@@ -119,13 +118,16 @@ class MPC:
         drive_msg.drive.steering_angle = delta
         drive_msg.drive.speed=self.dummy_velocity
         drive_msg.drive.acceleration = a
+        #debug_msg=String()
+        #debug_msg.data=rospy.get_param()
+        #self.debug_pub.publish(debug_msg)
         self.drive_pub.publish(drive_msg)
+        arrow= [a*np.cos(delta), a*np.sin(delta)]
+        self.visualise_arrow(arrow)
+        
         #self.visualise_goal(x_state)
 
-    def followLeft(self, data, leftDist):
-        #Follow left wall as per the algorithm
-        #TODO:implement
-        return 0.0
+    
 
     def odometry_callback(self, data):
         """
@@ -135,6 +137,13 @@ class MPC:
         
 
         self.get_mpc_step(car_state)
+    
+    def path_callback(self, data):
+        goal_x=data.poses[0:20].pose.position.x
+        goal_y=data.poses[0:20].pose.position.y
+        self.goal_array[0,:]=goal_x
+        self.goal_array[1,:]=goal_y
+
 
     def get_state_from_data(self, data):
         x=data.pose.pose.position.x
@@ -146,21 +155,22 @@ class MPC:
         #self.debug_pub.publish(String(data.pose.pose.position))
         #self.debug_pub.publish("")
         
-        return np.array([x,y, v, phi])
+        return np.array([x,y, phi])
 
 
-    def initialize_mpc(self):
-        rospy.loginfo("Initialising  MPC")
+    def setup_mpc(self):
+        rospy.loginfo("setting up MPC")
         model_type = 'discrete' # either 'discrete' or 'continuous'
         self.model = do_mpc.model.Model(model_type)
 
         #state
-        x = self.model.set_variable(var_type='_x', var_name='x', shape=(1,1)) #global position x
-        y =self.model.set_variable(var_type='_x', var_name='y', shape=(1,1)) #global position y
-        v = self.model.set_variable(var_type='_x', var_name='v', shape=(1,1)) # velocity
+        self.x = self.model.set_variable(var_type='_x', var_name='x', shape=(1,1)) #global position x
+        self.y =self.model.set_variable(var_type='_x', var_name='y', shape=(1,1)) #global position y
         phi = self.model.set_variable(var_type='_x', var_name='phi', shape=(1,1)) #heading of car
         delta = self.model.set_variable(var_type='_u', var_name='delta', shape=(1,1))# front steering angle
-        a = self.model.set_variable(var_type='_u', var_name='a', shape=(1,1))# accelleration
+        v = self.model.set_variable(var_type='_u', var_name='v', shape=(1,1)) # velocity
+        
+        #a = self.model.set_variable(var_type='_u', var_name='a', shape=(1,1))# accelleration
 
         #delta rear=0 since rear cannot be steered
 
@@ -178,25 +188,29 @@ class MPC:
         l_f=self.params['l_cg2front']
         l=l_r+l_f
         beta=self.model.set_expression('beta', np.arctan((l_r/l)*np.tan(delta)))
-
+        self.target_x=self.model.set_variable(var_type='_tvp', var_name='target_x', shape=(1,1))
+        self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
+        
         #differential equation
         dx_dt= v * np.cos(phi+beta)
         dy_dt= v * np.sin(phi+beta)
         dphi_dt=(v/l_r)*sin(beta)
-        dv_dt=a#casadi.SX.zeros(1,1) # a=0
+        #dv_dt=a#casadi.SX.zeros(1,1) # a=0
         #ddelta_dt=casadi.SX.zeros(1,1)#omega
 
         self.model.set_rhs('x', dx_dt)
         self.model.set_rhs('y', dy_dt)
         self.model.set_rhs('phi', dphi_dt)
-        self.model.set_rhs('v', dv_dt)
+        #self.model.set_rhs('v', dv_dt)
 
-
+        self.goal_array= np.zeros((2, 21))
+        #self.goal_y=np.zeros(21)
+        
 
         #setup
         self.model.setup()
-        self.mpc = do_mpc.controller.MPC(self.model)
-
+        self.controller = do_mpc.controller.MPC(self.model)
+        
         #optimiser parameters
         setup_mpc = {
             'n_horizon': 20,
@@ -204,73 +218,126 @@ class MPC:
             'n_robust': 1,
             'store_full_solution': True,
         }
-        self.mpc.set_param(**setup_mpc)
+        self.controller.set_param(**setup_mpc)
+        self.controller.set_tvp_fun(self.prepare_goal_template_controller(self.goal_array))
 
         #objective function
         #TODO
-        x_f   = self.goal[0]
-        y_f   = self.goal[1]
-        v_f   =  0
-        psi_f = -np.pi/2
+        #x_f   = self.goal[0]
+        #y_f   = self.goal[1]
+        #v_f   =  0
+        #psi_f = -np.pi/2
 
         # weights for objective function
         w_pos = 100
         w_vel = 0.2
 
-        lterm = w_pos*((x-x_f)**2 + (y-y_f)**2) + w_vel*(v-v_f)**2
-        mterm = w_pos*((x-x_f)**2 + (y-y_f)**2) + w_vel*(v-v_f)**2
+        #lterm = w_pos*((x-x_f)**2 + (y-y_f)**2) + w_vel*(v-v_f)**2
+        #mterm = w_pos*((x-x_f)**2 + (y-y_f)**2) + w_vel*(v-v_f)**2
 
-        self.mpc.set_objective(mterm=mterm, lterm=lterm)
+        #self.controller.set_objective(mterm=mterm, lterm=lterm)
 
-        self.mpc.set_rterm(delta=10.)
+        #self.controller.set_rterm(delta=10.)
 
-        self.mpc.set_objective(mterm=mterm, lterm=lterm)
+        #self.controller.set_objective(mterm=mterm, lterm=lterm)
 
         # Constraints on steering angle
-        self.mpc.bounds['lower','_u','delta'] = - self.params['max_steering_angle']
-        self.mpc.bounds['upper','_u','delta'] = self.params['max_steering_angle']
+        self.controller.bounds['lower','_u','delta'] = - self.params['max_steering_angle']
+        self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
-        self.mpc.bounds['lower','_u','a'] = - self.params['max_decel']
-        self.mpc.bounds['upper','_u','a'] = self.params['max_accel']
+        #self.controller.bounds['lower','_u','a'] = - self.params['max_decel']
+        #self.controller.bounds['upper','_u','a'] = self.params['max_accel']
 
-        self.mpc.bounds['lower','_x','v'] = 0 #not going backwards
-        self.mpc.bounds['upper','_x','v'] = self.params['max_speed']
+        self.controller.bounds['lower','_u','v'] = 0 #not going backwards
+        self.controller.bounds['upper','_u','v'] = self.params['max_speed']
 
-        self.mpc.setup()
+        self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
+        
+
+        self.controller.setup()
         self.simulator = do_mpc.simulator.Simulator(self.model)
         self.simulator.set_param(t_step = 0.1)
+        self.simulator.set_tvp_fun(self.prepare_goal_template_simulator)
+        
         self.simulator.setup()
 
         x_0 = 0
         y_0 = 0
         v_0 = 0
-        phi_0 = np.pi/4
+        phi_0 = 0
         delta_0=0
 
         state_0 = np.array([x_0,
                             y_0,
-                            v_0,
+                            
                             phi_0
                             ])
 
-        self.mpc.x0 = state_0
+        self.controller.x0 = state_0
         self.simulator.x0 = state_0
         
 
 
 
         # Set initial guess for MHE/MPC based on initial state.
-        self.mpc.set_initial_guess()
-
-        #mpc_graphics = do_mpc.graphics.Graphics(self.mpc.data)
+        self.controller.set_initial_guess()
+        
+        #mpc_graphics = do_mpc.graphics.Graphics(self.controller.data)
         #sim_graphics = do_mpc.graphics.Graphics(self.simulator.data)
-
-
+        
         self.u0 = np.zeros((2,1))
         self.x0=self.simulator.x0
         rospy.loginfo("MPC set up finished")
+    
+        
+    def get_prediction_coordinates(self):
+        pathfile_name=rospy.get_param('/path_node/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
+        path_data=pd.read_csv(pathfile_name)
+        return path_data[' x_m', ' y_m']
+
+    def prepare_goal_template_controller(self, target_array):
+        
+        #tvp_template = self.controller.get_tvp_template()
+        #rospy.loginfo(template)
+        #for k in range(20+1):
+        #        tvp_template["_tvp",k,'target_x'] = target_array[0, k]
+        #        tvp_template["_tvp",k,'target_y'] = target_array[1,k]
+        template = self.controller.get_tvp_template()
+
+        for k in range(20 + 1):
+            template["_tvp", k, "target_x"] = 10
+            template["_tvp", k, "target_y"] = 20
+
+        return template    
+
         
 
+    def prepare_goal_template_simulator(self, _):
+        
+        template = self.simulator.get_tvp_template()
+        template['target_x']=10
+        template['target_y']=20
+        #template["_tvp", 0, "target_x"] = self.goal_array[0,0]
+        #template["_tvp", 0, "target_y"] = self.goal_array[1,0]
+            
+
+        return template
+
+   
+
+    @property
+    def stage_cost(self):
+        """
+        none
+        """
+        return DM.zeros()
+
+    @property
+    def terminal_cost(self):
+        """
+        difference between target and actual
+        """
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2
         
 
 def main(args):
