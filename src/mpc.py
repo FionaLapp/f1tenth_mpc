@@ -4,6 +4,7 @@ Created on Thu May 12 12:06:18 2022
 @author: Fiona
 """
 from __future__ import print_function
+from importlib.machinery import PathFinder
 import sys
 import math
 import numpy as np
@@ -19,15 +20,18 @@ import matplotlib.pyplot as plt
 from casadi import *
 
 # Import do_mpc package:
-import do_mpc
+from do_mpc.model import Model
+from do_mpc.controller import MPC
+from tf.transformations import euler_from_quaternion
 
 
 #ROS Imports
 import rospy
 from nav_msgs.msg import Odometry
+from nav_msgs.msg import Path
 from sensor_msgs.msg import Image, LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
-
+from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String, ColorRGBA
 from visualization_msgs.msg import Marker
 
@@ -42,11 +46,12 @@ class MPC:
         self.setup_node()
     def setup_node(self):
         #Topics & Subs, Pubs
-        odometry_topic= '/odom'
+        odometry_topic= '/trajectory'#'/odom'#'slam_out_pose'
         drive_topic = '/nav'
         debug_topic= '/debug'
         arrow_topic='/velocity'
         path_topic='/goal_path'
+        
 
         
         self.dummy_velocity=1
@@ -55,8 +60,8 @@ class MPC:
         #self.visualise_goal(self.goal)
 
         #self.lidar_sub = rospy.Subscriber(lidarscan_topic, LaserScan, self.lidar_callback)#TODO: Subscribe to LIDAR
-        self.odom_sub=rospy.Subscriber(odometry_topic, Odometry, self.odometry_callback)#TODO: Subscribe to LIDAR
-        self.path_sub=rospy.Subscriber(path_topic, Odometry, self.path_callback)#TODO: Subscribe to LIDAR
+        self.odom_sub=rospy.Subscriber(odometry_topic, Path, self.odometry_callback)#TODO: Subscribe to LIDAR
+        self.path_sub=rospy.Subscriber(path_topic, Path, self.path_callback)#TODO: Subscribe to LIDAR
         
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)#TODO: Publish to drive
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
@@ -111,45 +116,56 @@ class MPC:
         #x = self.simulator.make_step(u0) #TODO add real measurement here
         
         delta=u[0]
-        a=u[1]
+        v=u[1]
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()
         drive_msg.header.frame_id = "laser"
         drive_msg.drive.steering_angle = delta
-        drive_msg.drive.speed=self.dummy_velocity
-        drive_msg.drive.acceleration = a
+        drive_msg.drive.speed=v
+        #drive_msg.drive.acceleration = a
         #debug_msg=String()
         #debug_msg.data=rospy.get_param()
         #self.debug_pub.publish(debug_msg)
         self.drive_pub.publish(drive_msg)
-        arrow= [a*np.cos(delta), a*np.sin(delta)]
-        self.visualise_arrow(arrow)
+        #arrow= [a*np.cos(delta), a*np.sin(delta)]
+        #self.visualise_arrow(arrow)
         
         #self.visualise_goal(x_state)
 
     
 
-    def odometry_callback(self, data):
+    def odometry_callback(self, data:Path):
         """
         """
         
-        car_state=self.get_state_from_data(data)
-        
-
+        car_state=self.get_state_from_data(data.poses[-1])
+        #rospy.loginfo(car_state)
+        #print(car_state)
         self.get_mpc_step(car_state)
     
-    def path_callback(self, data):
-        goal_x=data.poses[0:20].pose.position.x
-        goal_y=data.poses[0:20].pose.position.y
-        self.goal_array[0,:]=goal_x
-        self.goal_array[1,:]=goal_y
+    def path_callback(self, data:Path):
+       
+        
+        for i in range(10):
+            goal_x=data.poses[i].pose.position.x
+            goal_y=data.poses[i].pose.position.y
+            
+        #rospy.loginfo(self.goal_array)
+        self.goal_x=goal_x
+        self.goal_y=goal_y
+        rospy.loginfo(self.goal_x)
 
 
-    def get_state_from_data(self, data):
-        x=data.pose.pose.position.x
-        y=data.pose.pose.position.y
-        v= self.dummy_velocity
-        phi=2*np.arcsin(data.pose.pose.position.z)
+    def get_state_from_data(self, data:PoseStamped):
+        #print(data)
+        x=data.pose.position.x
+        y=data.pose.position.y
+        #v= self.dummy_velocity
+        orientation_list=[data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w]
+        (roll, pitch, phi) = euler_from_quaternion (orientation_list)
+        #print(euler_from_quaternion (orientation_list))
+        #phi=2*np.arcsin(data.pose.orientation.z)
+
         #also_phi=2*np.arccos(data.pose.pose.position.w)
         #self.debug_pub.publish("phi")
         #self.debug_pub.publish(String(data.pose.pose.position))
@@ -160,15 +176,15 @@ class MPC:
 
     def setup_mpc(self):
         rospy.loginfo("setting up MPC")
-        model_type = 'discrete' # either 'discrete' or 'continuous'
-        self.model = do_mpc.model.Model(model_type)
+        model_type = 'continuous' # either 'discrete' or 'continuous'
+        self.model = Model(model_type)
 
         #state
         self.x = self.model.set_variable(var_type='_x', var_name='x', shape=(1,1)) #global position x
         self.y =self.model.set_variable(var_type='_x', var_name='y', shape=(1,1)) #global position y
         phi = self.model.set_variable(var_type='_x', var_name='phi', shape=(1,1)) #heading of car
         delta = self.model.set_variable(var_type='_u', var_name='delta', shape=(1,1))# front steering angle
-        v = self.model.set_variable(var_type='_u', var_name='v', shape=(1,1)) # velocity
+        self.v = self.model.set_variable(var_type='_u', var_name='v', shape=(1,1)) # velocity
         
         #a = self.model.set_variable(var_type='_u', var_name='a', shape=(1,1))# accelleration
 
@@ -192,9 +208,9 @@ class MPC:
         self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
         
         #differential equation
-        dx_dt= v * np.cos(phi+beta)
-        dy_dt= v * np.sin(phi+beta)
-        dphi_dt=(v/l_r)*sin(beta)
+        dx_dt= self.v * np.cos(phi+beta)
+        dy_dt= self.v * np.sin(phi+beta)
+        dphi_dt=(self.v/l_r)*sin(beta)
         #dv_dt=a#casadi.SX.zeros(1,1) # a=0
         #ddelta_dt=casadi.SX.zeros(1,1)#omega
 
@@ -203,14 +219,16 @@ class MPC:
         self.model.set_rhs('phi', dphi_dt)
         #self.model.set_rhs('v', dv_dt)
 
-        self.goal_array= np.zeros((2, 21))
+        self.goal_x=0
+        self.goal_y=0
         #self.goal_y=np.zeros(21)
         
 
         #setup
         self.model.setup()
-        self.controller = do_mpc.controller.MPC(self.model)
-        
+        self.controller = MPC(self.model)
+        suppress_ipopt = {'ipopt.print_level':0, 'ipopt.sb': 'yes', 'print_time':0}
+        self.controller.set_param(nlpsol_opts = suppress_ipopt)
         #optimiser parameters
         setup_mpc = {
             'n_horizon': 20,
@@ -219,8 +237,8 @@ class MPC:
             'store_full_solution': True,
         }
         self.controller.set_param(**setup_mpc)
-        self.controller.set_tvp_fun(self.prepare_goal_template_controller(self.goal_array))
-
+        self.controller.set_tvp_fun(self.prepare_goal_template)
+        
         #objective function
         #TODO
         #x_f   = self.goal[0]
@@ -252,14 +270,15 @@ class MPC:
         self.controller.bounds['upper','_u','v'] = self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
-        
+        self.controller.set_rterm(v=1)
+        self.controller.set_rterm(delta=1)
 
         self.controller.setup()
-        self.simulator = do_mpc.simulator.Simulator(self.model)
-        self.simulator.set_param(t_step = 0.1)
-        self.simulator.set_tvp_fun(self.prepare_goal_template_simulator)
+        #self.simulator = do_mpc.simulator.Simulator(self.model)
+        #self.simulator.set_param(t_step = 0.1)
+        #self.simulator.set_tvp_fun(self.prepare_goal_template_simulator)
         
-        self.simulator.setup()
+        #self.simulator.setup()
 
         x_0 = 0
         y_0 = 0
@@ -274,7 +293,7 @@ class MPC:
                             ])
 
         self.controller.x0 = state_0
-        self.simulator.x0 = state_0
+        #self.simulator.x0 = state_0
         
 
 
@@ -286,7 +305,7 @@ class MPC:
         #sim_graphics = do_mpc.graphics.Graphics(self.simulator.data)
         
         self.u0 = np.zeros((2,1))
-        self.x0=self.simulator.x0
+        #self.x0=self.simulator.x0
         rospy.loginfo("MPC set up finished")
     
         
@@ -295,7 +314,7 @@ class MPC:
         path_data=pd.read_csv(pathfile_name)
         return path_data[' x_m', ' y_m']
 
-    def prepare_goal_template_controller(self, target_array):
+    def prepare_goal_template(self, t_now):
         
         #tvp_template = self.controller.get_tvp_template()
         #rospy.loginfo(template)
@@ -305,23 +324,27 @@ class MPC:
         template = self.controller.get_tvp_template()
 
         for k in range(20 + 1):
-            template["_tvp", k, "target_x"] = 10
-            template["_tvp", k, "target_y"] = 20
+            #rospy.loginfo(self.goal_array[0, 19])
+            template["_tvp", k, "target_x"]=self.goal_x#"tar#t_now#target_array[0, k]
+            template["_tvp", k, "target_y"] =self.goal_y#0#target_array[1,k]
+            #rospy.loginfo(target_array)
+        #print(template)
+        #print((self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2)
 
         return template    
 
         
 
-    def prepare_goal_template_simulator(self, _):
+    # def prepare_goal_template_simulator(self, _):
         
-        template = self.simulator.get_tvp_template()
-        template['target_x']=10
-        template['target_y']=20
-        #template["_tvp", 0, "target_x"] = self.goal_array[0,0]
-        #template["_tvp", 0, "target_y"] = self.goal_array[1,0]
+    #     template = self.simulator.get_tvp_template()
+    #     template['target_x']=10
+    #     template['target_y']=20
+    #     #template["_tvp", 0, "target_x"] = self.goal_array[0,0]
+    #     #template["_tvp", 0, "target_y"] = self.goal_array[1,0]
             
 
-        return template
+    #     return template
 
    
 
@@ -337,7 +360,8 @@ class MPC:
         """
         difference between target and actual
         """
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2
+        
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 
         
 
 def main(args):
