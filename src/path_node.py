@@ -52,11 +52,18 @@ def main(args):
     rospy.loginfo("starting up path node")
 
     desired_path = DesiredPath()
-    rate=rospy.Rate(10)
+    rate=rospy.Rate(1)
     counter=0
+    path_length=len(desired_path.path.poses)
     while not rospy.is_shutdown():
-        desired_path.path_pub.publish(desired_path.path)
+        current_path=Path()
+        current_path.header.frame_id='map'
+        current_path.poses=desired_path.path.poses[(counter)%path_length:(counter+20)%path_length]
+        
+        desired_path.path_pub.publish(current_path)
+        #desired_path.path_pub.publish(desired_path.path)
         rate.sleep()
+        counter+=1
 
 if __name__=='__main__':
 	main(sys.argv)
