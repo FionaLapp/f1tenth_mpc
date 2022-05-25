@@ -17,7 +17,7 @@ import sys
 sys.path.append('../../')
 
 import matplotlib.pyplot as plt
-from casadi import *
+import casadi
 
 # Import do_mpc package:
 from do_mpc.model import Model
@@ -37,6 +37,7 @@ from visualization_msgs.msg import Marker
 
 
 
+
 class BaseController:
     """ Implement Wall Following on the car
     """
@@ -46,12 +47,12 @@ class BaseController:
         self.setup_node()
     def setup_node(self):
         #Topics & Subs, Pubs
-        odometry_topic= '/trajectory'#change to a different odometry topic if applicable (e.g. if using hector)
+        localisation_topic= '/trajectory'#change to a different topic if applicable (e.g. if using hector)
         drive_topic = '/nav'
         debug_topic= '/debug'
         path_topic='/goal_path'
         
-        self.odom_sub=rospy.Subscriber(odometry_topic, Path, self.odometry_callback)
+        self.localisation_sub=rospy.Subscriber(localisation_topic, Path, self.localisation_callback)
         self.path_sub=rospy.Subscriber(path_topic, Path, self.path_callback)
         
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
@@ -100,14 +101,12 @@ class BaseController:
         drive_msg.header.frame_id = "drive"
         drive_msg.drive.steering_angle = delta
         drive_msg.drive.speed=v
-        
         self.drive_pub.publish(drive_msg)
         
 
-    
-
-    def odometry_callback(self, data:Path):
+    def localisation_callback(self, data:Path):
         """
+        Could be from any source of localisation (e.g. odometry or lidar)
         """
         
         car_state=self.get_state_from_data(data.poses[-1])
@@ -115,6 +114,9 @@ class BaseController:
         self.make_mpc_step(car_state)
     
     def path_callback(self, data:Path):
+        """
+        Update goal position
+        """
 
         for i in range(10):
             goal_x=data.poses[i].pose.position.x
@@ -125,6 +127,9 @@ class BaseController:
 
 
     def get_state_from_data(self, data:PoseStamped):
+        """
+        Takes in PoseStamped, returns array of [x,y,heading_angle]
+        """
         x=data.pose.position.x
         y=data.pose.position.y
         orientation_list=[data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w]
@@ -140,22 +145,28 @@ class BaseController:
         #state
         self.x = self.model.set_variable(var_type='_x', var_name='x', shape=(1,1)) #global position x
         self.y =self.model.set_variable(var_type='_x', var_name='y', shape=(1,1)) #global position y
-        phi = self.model.set_variable(var_type='_x', var_name='phi', shape=(1,1)) #heading of car
-        delta = self.model.set_variable(var_type='_u', var_name='delta', shape=(1,1))# front steering angle
+        self.phi = self.model.set_variable(var_type='_x', var_name='phi', shape=(1,1)) #heading of car
+        self.delta = self.model.set_variable(var_type='_u', var_name='delta', shape=(1,1))# front steering angle
         self.v = self.model.set_variable(var_type='_u', var_name='v', shape=(1,1)) # velocity
         
         l_r=self.params['l_cg2rear']
         l_f=self.params['l_cg2front']
         l=l_r+l_f
-        beta=self.model.set_expression('beta', np.arctan((l_r/l)*np.tan(delta)))
+        beta=self.model.set_expression('beta', np.arctan((l_r/l)*np.tan(self.delta)))
         self.target_x=self.model.set_variable(var_type='_tvp', var_name='target_x', shape=(1,1))
         self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
         
         #differential equations
-        dx_dt= self.v * np.cos(phi+beta)
-        dy_dt= self.v * np.sin(phi+beta)
-        dphi_dt=(self.v/l_r)*sin(beta)
-        
+
+        # dx_dt= self.v * casadi.cos(self.phi+beta)
+        # dy_dt= self.v * casadi.sin(self.phi+beta)
+        # dphi_dt=(self.v/l_r)*casadi.sin(beta)
+
+        slip_factor = self.model.set_expression('slip_factor', casadi.arctan(l_r * casadi.tan(self.delta) /self.params['wheelbase']))
+        dx_dt= self.v * casadi.cos(self.phi + slip_factor)
+        dy_dt= self.v * casadi.sin(self.phi + slip_factor)
+        dphi_dt=self.v * casadi.tan(self.delta)* casadi.cos(slip_factor) / self.params['wheelbase']
+
         self.model.set_rhs('x', dx_dt)
         self.model.set_rhs('y', dy_dt)
         self.model.set_rhs('phi', dphi_dt)
@@ -202,6 +213,7 @@ class BaseController:
         self.controller.set_initial_guess()
         
         rospy.loginfo("MPC set up finished")
+
     
         
   
@@ -226,7 +238,7 @@ class BaseController:
         """
         none
         """
-        return DM.zeros()
+        return casadi.DM.zeros()
 
     @property
     def terminal_cost(self):
