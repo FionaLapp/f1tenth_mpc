@@ -87,9 +87,10 @@ class BaseController:
         params['scan_distance_to_base_link']= rospy.get_param(namespace+'scan_distance_to_base_link', 0.275) # meters
         return params    
 
-    def get_mpc_step(self, x_state):
+    def make_mpc_step(self, x_state):
         
         u = self.controller.make_step(x_state)
+        #rospy.loginfo(u)
         delta=u[0]
         v=u[1]
 
@@ -110,8 +111,8 @@ class BaseController:
         """
         
         car_state=self.get_state_from_data(data.poses[-1])
-        
-        self.get_mpc_step(car_state)
+        rospy.loginfo("Actual car position (x,y,phi)={}".format(car_state))
+        self.make_mpc_step(car_state)
     
     def path_callback(self, data:Path):
 
@@ -182,8 +183,8 @@ class BaseController:
         self.controller.bounds['lower','_u','delta'] = - self.params['max_steering_angle']
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
-        self.controller.bounds['lower','_u','v'] = 0 #not going backwards
-        self.controller.bounds['upper','_u','v'] = self.params['max_speed']
+        self.controller.bounds['lower','_u','v'] = 1 #not going backwards
+        self.controller.bounds['upper','_u','v'] = 4#self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
@@ -213,7 +214,7 @@ class BaseController:
             
             template["_tvp", k, "target_x"]=self.goal_x
             template["_tvp", k, "target_y"] =self.goal_y
-            
+        rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
         return template    
 
         
