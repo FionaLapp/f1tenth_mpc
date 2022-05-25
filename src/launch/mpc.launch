@@ -41,6 +41,7 @@
 
   <!-- ***Put launch command for new planner here:-->
   <!-- Launch the New Planner Node -->
+
 	
   <node pkg="f1tenth_mpc" name="mpc" type="mpc.py" output="screen">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
@@ -51,10 +52,13 @@
           
           <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	 </node> 
+  	 
  <!-- Launch initialpose node -->
-<node pkg="f1tenth_mpc" name="initial_pose_node" type="initial_pose_node.py">
-          
+ <!--
+<node pkg="f1tenth_mpc" name="initial_pose_node" type="initial_pose_node.py" output="screen">
+          <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	 </node> 
+  	 -->
 
   <!-- Launch RVIZ -->
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>
@@ -66,6 +70,7 @@
    	<rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	 </node> 
   	 
+  	
   
   
   

@@ -10,12 +10,13 @@ import numpy as np
 import pandas as pd
 import os
 
+
 #ROS Imports
 import rospy
 from nav_msgs.msg import Odometry, Path
 from sensor_msgs.msg import Image, LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from std_msgs.msg import String, ColorRGBA
 from visualization_msgs.msg import Marker
 
@@ -28,13 +29,24 @@ class InitialiseRobot:
         
         path_topic='/goal_path'
         initial_pose_topic='/initialpose'
-        self.path_sub=rospy.Subscriber(path_topic, Path, self.path_callback)#TODO: Subscribe to LIDAR
-        self.initial_pose_pub = rospy.Publisher(initial_pose_topic, PoseStamped, queue_size=1)#TODO: Publish to drive
+        #self.path_sub=rospy.Subscriber(path_topic, Path, self.path_callback)#TODO: Subscribe to LIDAR
+        self.initial_pose_pub = rospy.Publisher(initial_pose_topic, PoseWithCovarianceStamped, queue_size=1)#TODO: Publish to drive
+        namespace='initial_pose_node/'
+        self.start_x= rospy.get_param(namespace+'start_x', 0) # meters
+        self.start_y= rospy.get_param(namespace+'start_y', 0) # meters
+        self.start_psi= rospy.get_param(namespace+'start_psi', np.pi/2) #rad
+        pose=PoseWithCovarianceStamped()
+        pose.header.stamp=rospy.Time.now()
+        pose.header.frame_id='map'
         
-    def path_callback(self, data):
-
-        pose=data[0]
-        self.initial_pose_pub.publish(pose)
+        pose.pose.pose.position.x= self.start_x
+        pose.pose.pose.position.y=self.start_y
+        rospy.loginfo(pose)
+        #pose.pose.pose.orientation.z=np.arcsin(self.start_psi)
+        self.pose=pose
+        
+    
+    
     
 
 
@@ -44,8 +56,13 @@ def main(args):
     
     rospy.init_node("initial_pose_node")
     rospy.loginfo("starting up initial pose node")
-    rospy.sleep(0.1)
-    rospy.spin()
+    initialise=InitialiseRobot()
+    rate=rospy.Rate(1)
+
+    for i in range(1):
+        initialise.initial_pose_pub.publish(initialise.pose)
+        rospy.loginfo("publish")
+        rate.sleep()
 
 if __name__=='__main__':
 	main(sys.argv)
