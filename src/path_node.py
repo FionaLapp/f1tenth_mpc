@@ -52,7 +52,7 @@ def main(args):
     rospy.loginfo("starting up path node")
 
     desired_path = DesiredPath()
-    rate=rospy.Rate(1)
+    rate=rospy.Rate(5)
     counter=0
     path_length=len(desired_path.path.poses)
     while not rospy.is_shutdown():
@@ -72,29 +72,4 @@ if __name__=='__main__':
 
 
 
-
-'''
-
-for k in range(10):
-  u0 = mpc.make_step(x0)
-  x0 = simulator.make_step(u0)
-
-fig, ax, graphics = do_mpc.graphics.default_plot(mpc.data, figsize=(16,9))
-graphics.plot_results()
-graphics.reset_axes()
-plt.show()
-
-
-fig, ax = plt.subplots(3, figsize=(16,9))
-
-
-sim_graphics.add_line(var_type='_x', var_name='x', axis=ax[0])
-sim_graphics.add_line(var_type='_x', var_name='y', axis=ax[0])
-
-
-mpc_graphics.add_line(var_type='_u', var_name='a', axis=ax[1])
-
-
-mpc_graphics.add_line(var_type='_u', var_name='delta', axis=ax[2])
-'''
 
