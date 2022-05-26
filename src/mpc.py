@@ -22,7 +22,7 @@ import casadi
 # Import do_mpc package:
 from do_mpc.model import Model
 from do_mpc.controller import MPC
-from tf.transformations import euler_from_quaternion
+from do_mpc.simulator import Simulator
 
 
 #ROS Imports
@@ -34,6 +34,7 @@ from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String, ColorRGBA
 from visualization_msgs.msg import Marker
+from tf.transformations import euler_from_quaternion
 
 
 
@@ -91,7 +92,9 @@ class BaseController:
     def make_mpc_step(self, x_state):
         
         u = self.controller.make_step(x_state)
-        #rospy.loginfo(u)
+        simulated_x = self.simulator.make_step(u)
+        rospy.loginfo("expected new state (x,y,phi) {}".format(simulated_x))
+        
         delta=u[0]
         v=u[1]
 
@@ -214,6 +217,22 @@ class BaseController:
         
         rospy.loginfo("MPC set up finished")
 
+        #setup simulator
+        self.simulator = Simulator(self.model)
+        self.simulator.set_param(t_step = 0.1)
+        self.simulator.set_tvp_fun(self.prepare_goal_template_simulator)
+        self.simulator.x0 = state_0
+        
+        self.simulator.setup()
+
+    def prepare_goal_template_simulator(self, _):
+    
+        template = self.simulator.get_tvp_template()
+        template['target_x']=self.goal_x
+        template['target_y']=self.goal_y
+            
+
+        return template
     
         
   
@@ -226,7 +245,7 @@ class BaseController:
             
             template["_tvp", k, "target_x"]=self.goal_x
             template["_tvp", k, "target_y"] =self.goal_y
-        rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
+        #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
         return template    
 
         
