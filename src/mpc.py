@@ -36,8 +36,7 @@ from std_msgs.msg import String, ColorRGBA
 from visualization_msgs.msg import Marker
 from tf.transformations import euler_from_quaternion
 
-
-
+import visualiser
 
 class BaseController:
     """ Implement Wall Following on the car
@@ -52,12 +51,15 @@ class BaseController:
         drive_topic = '/nav'
         debug_topic= '/debug'
         path_topic='/goal_path'
+        #vis_topic='/vis'
         
         self.localisation_sub=rospy.Subscriber(localisation_topic, Path, self.localisation_callback)
         self.path_sub=rospy.Subscriber(path_topic, Path, self.path_callback)
         
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
+
+        #self.vis_pub=rospy.Publisher(vis_topic, Marker, queue_size=100)
 
 
     def get_params(self):
@@ -93,7 +95,7 @@ class BaseController:
         
         u = self.controller.make_step(x_state)
         simulated_x = self.simulator.make_step(u)
-        rospy.loginfo("expected new state (x,y,phi) {}".format(simulated_x))
+        #rospy.loginfo("expected new state (x,y,phi) {}".format(simulated_x))
         
         delta=u[0]
         v=u[1]
@@ -113,7 +115,7 @@ class BaseController:
         """
         
         car_state=self.get_state_from_data(data.poses[-1])
-        rospy.loginfo("Actual car position (x,y,phi)={}".format(car_state))
+        #rospy.loginfo("Actual car position (x,y,phi)={}".format(car_state))
         self.make_mpc_step(car_state)
     
     def path_callback(self, data:Path):
@@ -127,6 +129,9 @@ class BaseController:
             
         self.goal_x=goal_x
         self.goal_y=goal_y
+        vis_point=visualiser.TargetMarker(self.goal_x, self.goal_y, 1)
+        vis_point.draw_point()
+        #visualiser.draw_point(self.goal_x, self.goal_y, self.vis_pub, 1)
 
 
     def get_state_from_data(self, data:PoseStamped):
@@ -174,8 +179,8 @@ class BaseController:
         self.model.set_rhs('y', dy_dt)
         self.model.set_rhs('phi', dphi_dt)
         
-        self.goal_x=0
-        self.goal_y=0
+        self.goal_x=2
+        self.goal_y=1
 
         #setup
         self.model.setup()
@@ -197,12 +202,12 @@ class BaseController:
         self.controller.bounds['lower','_u','delta'] = - self.params['max_steering_angle']
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
-        self.controller.bounds['lower','_u','v'] = 1 #not going backwards
-        self.controller.bounds['upper','_u','v'] = 4#self.params['max_speed']
+        self.controller.bounds['lower','_u','v'] = 0 #not going backwards
+        self.controller.bounds['upper','_u','v'] = 1#self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
-        self.controller.set_rterm(v=1)
-        self.controller.set_rterm(delta=1)
+        self.controller.set_rterm(v=200)
+        self.controller.set_rterm(delta=200)
 
         self.controller.setup()
 

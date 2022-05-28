@@ -161,13 +161,13 @@ Visualization Manager:
       Value: true
     - Class: rviz/Marker
       Enabled: true
-      Marker Topic: /velocity
-      Name: Marker
-      Color: 0; 0; 255
+      Marker Topic: /target_vis
+      Name: GoalMarker
       Namespaces:
         {}
       Queue Size: 100
       Value: true
+      Pose Color: 255; 0; 0, 1
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
