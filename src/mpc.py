@@ -23,6 +23,7 @@ import casadi
 from do_mpc.model import Model
 from do_mpc.controller import MPC
 from do_mpc.simulator import Simulator
+from do_mpc.data import MPCData
 
 
 #ROS Imports
@@ -95,6 +96,14 @@ class BaseController:
         
         u = self.controller.make_step(x_state)
         simulated_x = self.simulator.make_step(u)
+
+        x_pred=self.controller.data.prediction(('_x', 'x'))[0]
+        y_pred=self.controller.data.prediction(('_x', 'y'))[0]
+        
+        vis_point=visualiser.TrajectoryMarker(x_pred, y_pred, 1)  
+        vis_point.draw_point()
+        #rospy.loginfo("predicted x:{}, y:{}. Actual y: {}".format(x_pred[0][0], y_pred[0][0], x_state))
+        
         #rospy.loginfo("expected new state (x,y,phi) {}".format(simulated_x))
         
         delta=u[0]
@@ -131,8 +140,7 @@ class BaseController:
         self.goal_y=goal_y
         vis_point=visualiser.TargetMarker(self.goal_x, self.goal_y, 1)
         vis_point.draw_point()
-        #visualiser.draw_point(self.goal_x, self.goal_y, self.vis_pub, 1)
-
+        
 
     def get_state_from_data(self, data:PoseStamped):
         """
@@ -202,7 +210,7 @@ class BaseController:
         self.controller.bounds['lower','_u','delta'] = - self.params['max_steering_angle']
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
-        self.controller.bounds['lower','_u','v'] = 0 #not going backwards
+        self.controller.bounds['lower','_u','v'] = 0.7 #not going backwards
         self.controller.bounds['upper','_u','v'] = 1#self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
