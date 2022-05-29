@@ -46,15 +46,17 @@ class BaseController:
         self.params=self.get_params()
         self.setup_mpc()
         self.setup_node()
+        
     def setup_node(self):
         #Topics & Subs, Pubs
-        localisation_topic= '/trajectory'#change to a different topic if applicable (e.g. if using hector)
+        #localisation_topic= '/trajectory'#change to a different topic if applicable (e.g. if using hector)
+        localisation_topic= '/odom'#change to a different topic if applicable (e.g. if using hector)
         drive_topic = '/nav'
         debug_topic= '/debug'
         path_topic='/goal_path'
         #vis_topic='/vis'
         
-        self.localisation_sub=rospy.Subscriber(localisation_topic, Path, self.localisation_callback)
+        self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)
         self.path_sub=rospy.Subscriber(path_topic, Path, self.path_callback)
         
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
@@ -94,8 +96,8 @@ class BaseController:
 
     def make_mpc_step(self, x_state):
         
-        u = self.controller.make_step(x_state)
-        simulated_x = self.simulator.make_step(u)
+        u =self.controller.make_step(self.simulated_x)
+        self.simulated_x = self.simulator.make_step(u)
 
         x_pred=self.controller.data.prediction(('_x', 'x'))[0]
         y_pred=self.controller.data.prediction(('_x', 'y'))[0]
@@ -118,13 +120,14 @@ class BaseController:
         self.drive_pub.publish(drive_msg)
         
 
-    def localisation_callback(self, data:Path):
+    def localisation_callback(self, data:Odometry):
         """
         Could be from any source of localisation (e.g. odometry or lidar)
         """
         
-        car_state=self.get_state_from_data(data.poses[-1])
+        car_state=self.get_state_from_data(data)
         #rospy.loginfo("Actual car position (x,y,phi)={}".format(car_state))
+        
         self.make_mpc_step(car_state)
     
     def path_callback(self, data:Path):
@@ -142,14 +145,16 @@ class BaseController:
         vis_point.draw_point()
         
 
-    def get_state_from_data(self, data:PoseStamped):
+    def get_state_from_data(self, data:Odometry):
         """
         Takes in PoseStamped, returns array of [x,y,heading_angle]
         """
-        x=data.pose.position.x
-        y=data.pose.position.y
-        orientation_list=[data.pose.orientation.x, data.pose.orientation.y, data.pose.orientation.z, data.pose.orientation.w]
+        x=data.pose.pose.position.x
+        #rospy.loginfo(data)
+        y=data.pose.pose.position.y
+        orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
         (roll, pitch, phi) = euler_from_quaternion (orientation_list)
+        #rospy.loginfo("{}, {}, {}".format(x, y, phi))
         return np.array([x,y, phi])
 
 
@@ -235,7 +240,7 @@ class BaseController:
         self.simulator.set_param(t_step = 0.1)
         self.simulator.set_tvp_fun(self.prepare_goal_template_simulator)
         self.simulator.x0 = state_0
-        
+        self.simulated_x=state_0
         self.simulator.setup()
 
     def prepare_goal_template_simulator(self, _):

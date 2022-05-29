@@ -40,18 +40,36 @@
   </node>
 
   <!-- ***Put launch command for new planner here:-->
-  <!-- Launch the New Planner Node -->
+  <!-- Launch the New Planner Node 
+  <node        name           = "base_laser_link"
+               pkg            = "tf"
+               type           = "static_transform_publisher"
+               args           = "0.2 0.0 0.1 0.0 0.0 0.0 base_link laser 20"/>
 
+
+  <node        pkg            = "amcl"
+               type           = "amcl"
+               name           = "amcl"
+               output         = "screen">
+  <rosparam    file           = "$(find f1tenth_mpc)/src/amcl_params.yml"
+               command        = "load"/>
+  <param       name           = "initial_pose_x"
+               value          = "0.0"/>
+  <param       name           = "initial_pose_y"
+               value          = "0.0"/>
+  <param       name           = "initial_pose_a"
+               value          = "0.0"/> </node>-->
 	
   <node pkg="f1tenth_mpc" name="mpc" type="mpc.py" output="screen">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
   	 </node> 
-<!-- Launch path node -->
+<!-- Launch path node    -->
 <node pkg="f1tenth_mpc" name="path_node" type="path_node.py">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
           
           <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	 </node> 
+  
   	 
  <!-- Launch initialpose node -->
  <!--
@@ -70,8 +88,12 @@
    	<rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	 </node> 
   	 
-  	
-  
+     <!--
+  	<node pkg="hector_mapping" type="hector_mapping" name="mapping">
+          <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+   	<rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
+  	 </node>
+  -->
   
   
 </launch>
