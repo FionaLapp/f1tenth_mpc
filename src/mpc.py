@@ -51,8 +51,8 @@ class BaseController:
     def setup_node(self):
         #Topics & Subs, Pubs
         #localisation_topic= '/trajectory'#change to a different topic if applicable (e.g. if using hector)
-        localisation_topic= '/odom'#change to a different topic if applicable (e.g. if using hector)
-        drive_topic = '/nav'
+        localisation_topic= '/odom'
+        drive_topic = '/drive'
         debug_topic= '/debug'
         path_topic='/goal_path'
         #key_topic='/key'
@@ -66,7 +66,7 @@ class BaseController:
         
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
-        
+        self.r2_sub=rospy.Subscriber('/racecar2/odom', Odometry, self.pose_callback, queue_size=1)
 
 
     def get_params(self):
@@ -101,6 +101,8 @@ class BaseController:
     def make_mpc_step(self, x_state):
         
         u =self.controller.make_step(x_state) #u =self.controller.make_step(self.simulated_x))
+        #u =self.controller.make_step(self.simulated_x)
+        
         self.simulated_x = self.simulator.make_step(u)
 
         x_pred=self.controller.data.prediction(('_x', 'x'))[0]
@@ -122,14 +124,28 @@ class BaseController:
         drive_msg.drive.steering_angle = delta
         drive_msg.drive.speed=v
         self.drive_pub.publish(drive_msg)
+
+
+
+    def pose_callback(self,pose_msg):
+
+        print(pose_msg) 
+
         
 
     def localisation_callback(self, data:Odometry):
         """
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         """
-        
-        car_state=self.get_state_from_data(data)
+        #rospy.loginfo(data)
+        x=data.pose.pose.position.x
+        #rospy.loginfo(data)
+        y=data.pose.pose.position.y
+        orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
+        (roll, pitch, phi) = euler_from_quaternion (orientation_list)
+        #rospy.loginfo("{}, {}, {}".format(x, y, phi))
+        car_state= np.array([x,y, phi])
+        #car_state=self.get_state_from_data(data)
         #rospy.loginfo("car position (x,y,phi)={}".format(car_state))
         
         self.make_mpc_step(car_state)
@@ -149,17 +165,17 @@ class BaseController:
         vis_point.draw_point()
         
 
-    def get_state_from_data(self, data:Odometry):
-        """
-        Takes in PoseStamped, returns array of [x,y,heading_angle]
-        """
-        x=data.pose.pose.position.x
-        rospy.loginfo(data)
-        y=data.pose.pose.position.y
-        orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
-        (roll, pitch, phi) = euler_from_quaternion (orientation_list)
-        #rospy.loginfo("{}, {}, {}".format(x, y, phi))
-        return np.array([x,y, phi])
+    # def get_state_from_data(self, data:Odometry):
+    #     """
+    #     Takes in PoseStamped, returns array of [x,y,heading_angle]
+    #     """
+    #     x=data.pose.pose.position.x
+    #     #rospy.loginfo(data)
+    #     y=data.pose.pose.position.y
+    #     orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
+    #     (roll, pitch, phi) = euler_from_quaternion (orientation_list)
+    #     #rospy.loginfo("{}, {}, {}".format(x, y, phi))
+    #     return np.array([x,y, phi])
 
 
     def setup_mpc(self):
