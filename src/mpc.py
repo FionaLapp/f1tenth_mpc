@@ -47,6 +47,7 @@ class BaseController:
         self.setup_mpc()
         self.setup_node()
         
+        
     def setup_node(self):
         #Topics & Subs, Pubs
         #localisation_topic= '/trajectory'#change to a different topic if applicable (e.g. if using hector)
@@ -54,15 +55,18 @@ class BaseController:
         drive_topic = '/nav'
         debug_topic= '/debug'
         path_topic='/goal_path'
-        #vis_topic='/vis'
+        #key_topic='/key'
+
+        #self.key_pub=rospy.Publisher(key_topic, String, queue_size=1)
+        #self.key_pub.publish(String('n'))
+        
         
         self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)
         self.path_sub=rospy.Subscriber(path_topic, Path, self.path_callback)
         
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
-
-        #self.vis_pub=rospy.Publisher(vis_topic, Marker, queue_size=100)
+        
 
 
     def get_params(self):
@@ -96,7 +100,7 @@ class BaseController:
 
     def make_mpc_step(self, x_state):
         
-        u =self.controller.make_step(self.simulated_x)
+        u =self.controller.make_step(x_state) #u =self.controller.make_step(self.simulated_x))
         self.simulated_x = self.simulator.make_step(u)
 
         x_pred=self.controller.data.prediction(('_x', 'x'))[0]
@@ -122,11 +126,11 @@ class BaseController:
 
     def localisation_callback(self, data:Odometry):
         """
-        Could be from any source of localisation (e.g. odometry or lidar)
+        Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         """
         
         car_state=self.get_state_from_data(data)
-        #rospy.loginfo("Actual car position (x,y,phi)={}".format(car_state))
+        #rospy.loginfo("car position (x,y,phi)={}".format(car_state))
         
         self.make_mpc_step(car_state)
     
@@ -150,7 +154,7 @@ class BaseController:
         Takes in PoseStamped, returns array of [x,y,heading_angle]
         """
         x=data.pose.pose.position.x
-        #rospy.loginfo(data)
+        rospy.loginfo(data)
         y=data.pose.pose.position.y
         orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
         (roll, pitch, phi) = euler_from_quaternion (orientation_list)
@@ -178,10 +182,6 @@ class BaseController:
         self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
         
         #differential equations
-
-        # dx_dt= self.v * casadi.cos(self.phi+beta)
-        # dy_dt= self.v * casadi.sin(self.phi+beta)
-        # dphi_dt=(self.v/l_r)*casadi.sin(beta)
 
         slip_factor = self.model.set_expression('slip_factor', casadi.arctan(l_r * casadi.tan(self.delta) /self.params['wheelbase']))
         dx_dt= self.v * casadi.cos(self.phi + slip_factor)
@@ -215,8 +215,8 @@ class BaseController:
         self.controller.bounds['lower','_u','delta'] = - self.params['max_steering_angle']
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
-        self.controller.bounds['lower','_u','v'] = 0.7 #not going backwards
-        self.controller.bounds['upper','_u','v'] = 1#self.params['max_speed']
+        self.controller.bounds['lower','_u','v'] = 0.2 #not going backwards
+        self.controller.bounds['upper','_u','v'] = 0.5#self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=200)
