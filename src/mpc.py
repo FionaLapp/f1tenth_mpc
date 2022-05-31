@@ -44,6 +44,7 @@ class BaseController:
     """
     def __init__(self):
         self.params=self.get_params()
+        self.read_desired_path()
         self.setup_mpc()
         self.setup_node()
         
@@ -68,9 +69,16 @@ class BaseController:
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
         self.r2_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#if I comment this out, the car goes in circles
     
-    def setup_desired_path(self):
-        pathfile_name=rospy.get_param('/path_node/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
+    def read_desired_path(self):
+        pathfile_name=rospy.get_param('/mpc/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
         self.path_data=pd.read_csv(pathfile_name)
+
+        self.previous_x=0
+        self.previous_y=0
+        self.distance_travelled=0.0
+        self.index=0
+    
+        
     
     def get_params(self):
         #I quite possibly came up with the worst way to do this
@@ -132,7 +140,7 @@ class BaseController:
 
     def pose_callback(self,pose_msg):
         a=pose_msg  
-        print(pose_msg) 
+        #print(pose_msg) 
 
         
 
@@ -140,18 +148,29 @@ class BaseController:
         """
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         """
-        #rospy.loginfo(data)
+        #update distance travelled
+
+        ds=np.sqrt((self.previous_x-self.state[0])**2+(self.previous_y-self.state[1])**2)
+        
+        self.distance_travelled=self.distance_travelled+ds
+        #rospy.loginfo(self.distance_travelled)
+        #rospy.loginfo("dt:{}, ds: {}".format(type(self.distance_travelled), type(ds)))
+        #update current state
+        self.previous_x=self.state[0]
+        self.previous_y=self.state[1]
         x=data.pose.pose.position.x
-        #rospy.loginfo(data)
         y=data.pose.pose.position.y
         orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
         (roll, pitch, phi) = euler_from_quaternion (orientation_list)
         #rospy.loginfo("{}, {}, {}".format(x, y, phi))
-        car_state= np.array([x,y, phi])
-        #car_state=self.get_state_from_data(data)
-        #rospy.loginfo("car position (x,y,phi)={}".format(car_state))
+        self.state= np.array([x,y, phi])
         
-        self.make_mpc_step(car_state)
+        #update goal
+        #rospy.loginfo(self.distance_travelled)
+        #rospy.loginfo(self.path_data[' s_m'])
+        self.index=np.searchsorted(self.path_data[' s_m'], self.distance_travelled, side='right', sorter=None)
+        rospy.loginfo(self.index)
+        self.make_mpc_step(self.state)
     
     def path_callback(self, data:Path):
         """
@@ -247,6 +266,7 @@ class BaseController:
         phi_0 = 0
         state_0 = np.array([x_0,y_0,phi_0])
         self.controller.x0 = state_0
+        self.state=state_0
        
         # Set initial guess for MHE/MPC based on initial state.
         self.controller.set_initial_guess()
@@ -279,8 +299,8 @@ class BaseController:
 
         for k in range(self.n_horizon + 1):
             
-            template["_tvp", k, "target_x"]=self.goal_x
-            template["_tvp", k, "target_y"] =self.goal_y
+            template["_tvp", k, "target_x"]=self.path_data[' x_m'][self.index+3]
+            template["_tvp", k, "target_y"] =self.path_data[' y_m'][self.index+3]
         #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
         return template    
 

@@ -62,13 +62,17 @@
 	
   <node pkg="f1tenth_mpc" name="mpc" type="mpc.py" output="screen">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
-  	 </node> 
+  	  <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
+  	 
+     </node> 
+
 <!-- Launch path node    -->
+<!--
 <node pkg="f1tenth_mpc" name="path_node" type="path_node.py">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
           
           <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
-  	 </node> 
+  	 </node> -->
   
   	 
  <!-- Launch initialpose node -->
