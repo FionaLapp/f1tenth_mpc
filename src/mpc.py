@@ -40,35 +40,29 @@ from tf.transformations import euler_from_quaternion
 import visualiser
 
 class BaseController:
-    """ Implement Wall Following on the car
+    """ 
     """
     def __init__(self):
         self.params=self.get_params()
         self.read_desired_path()
-        self.setup_mpc()
         self.setup_node()
+        self.setup_mpc()
+        
         
         
     def setup_node(self):
         #Topics & Subs, Pubs
-        #localisation_topic= '/trajectory'#change to a different topic if applicable (e.g. if using hector)
-        localisation_topic= '/odom'
+        
+        localisation_topic= '/odom' #change to a different topic if applicable (e.g. if using hector)
         drive_topic = '/drive'
         debug_topic= '/debug'
-        path_topic='/goal_path'
-        #key_topic='/key'
 
-        #self.key_pub=rospy.Publisher(key_topic, String, queue_size=1)
-        #self.key_pub.publish(String('n'))
-        
-        
         self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)
-        self.path_sub=rospy.Subscriber(path_topic, Path, self.path_callback)
-        
+        self.fixing_a_weird_bug_and_not_much_else_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#subscribing to /odom a second time somehow makes the first one work, otherwise it gets stuck at the origin
+    
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
-        self.r2_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#if I comment this out, the car goes in circles
-    
+        
     def read_desired_path(self):
         pathfile_name=rospy.get_param('/mpc/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
         self.path_data=pd.read_csv(pathfile_name)
@@ -111,21 +105,16 @@ class BaseController:
         return params    
 
     def make_mpc_step(self, x_state):
-        
-        u =self.controller.make_step(x_state) #u =self.controller.make_step(self.simulated_x))
-        #u =self.controller.make_step(self.simulated_x)
-        
-        self.simulated_x = self.simulator.make_step(u)
+        #making the mpc calculation
+        u =self.controller.make_step(x_state) 
 
+        #plotting the predicted  trajectorry
         x_pred=self.controller.data.prediction(('_x', 'x'))[0]
         y_pred=self.controller.data.prediction(('_x', 'y'))[0]
-        
-        vis_point=visualiser.TrajectoryMarker(x_pred, y_pred, 1)  
+        vis_point=visualiser.TrajectoryMarker(x_pred, y_pred, 1)  #somehow this dooesn't show up in the right colour or line thickness but for now it'll do
         vis_point.draw_point()
-        #rospy.loginfo("predicted x:{}, y:{}. Actual y: {}".format(x_pred[0][0], y_pred[0][0], x_state))
         
-        #rospy.loginfo("expected new state (x,y,phi) {}".format(simulated_x))
-        
+        #sending control input to /drive topic
         delta=u[0]
         v=u[1]
 
@@ -150,12 +139,9 @@ class BaseController:
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         """
         #update distance travelled
-
-        ds=np.sqrt((self.previous_x-self.state[0])**2+(self.previous_y-self.state[1])**2)
-        
-        self.distance_travelled=self.distance_travelled+ds
-        #rospy.loginfo(self.distance_travelled)
-        #rospy.loginfo("dt:{}, ds: {}".format(type(self.distance_travelled), type(ds)))
+        delta_s=np.sqrt((self.previous_x-self.state[0])**2+(self.previous_y-self.state[1])**2)
+        self.distance_travelled=self.distance_travelled+delta_s
+                
         #update current state
         self.previous_x=self.state[0]
         self.previous_y=self.state[1]
@@ -166,39 +152,10 @@ class BaseController:
         #rospy.loginfo("{}, {}, {}".format(x, y, phi))
         self.state= np.array([x,y, phi])
         
-        #update goal
-        #rospy.loginfo(self.distance_travelled)
-        #rospy.loginfo(self.path_data[' s_m'])
+        #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
         self.index=np.searchsorted(self.path_data[' s_m'], self.distance_travelled, side='right', sorter=None)
         rospy.loginfo(self.index)
         self.make_mpc_step(self.state)
-    
-    def path_callback(self, data:Path):
-        """
-        Update goal position
-        """
-
-        goal_x=data.poses[0].pose.position.x
-        goal_y=data.poses[0].pose.position.y
-        
-        self.goal_x=goal_x
-        self.goal_y=goal_y
-        vis_point=visualiser.TargetMarker(self.goal_x, self.goal_y, 1)
-        vis_point.draw_point()
-        
-
-    # def get_state_from_data(self, data:Odometry):
-    #     """
-    #     Takes in PoseStamped, returns array of [x,y,heading_angle]
-    #     """
-    #     x=data.pose.pose.position.x
-    #     #rospy.loginfo(data)
-    #     y=data.pose.pose.position.y
-    #     orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
-    #     (roll, pitch, phi) = euler_from_quaternion (orientation_list)
-    #     #rospy.loginfo("{}, {}, {}".format(x, y, phi))
-    #     return np.array([x,y, phi])
-
 
     def setup_mpc(self):
         rospy.loginfo("setting up MPC")
@@ -215,7 +172,6 @@ class BaseController:
         l_r=self.params['l_cg2rear']
         l_f=self.params['l_cg2front']
         l=l_r+l_f
-        beta=self.model.set_expression('beta', np.arctan((l_r/l)*np.tan(self.delta)))
         self.target_x=self.model.set_variable(var_type='_tvp', var_name='target_x', shape=(1,1))
         self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
         
@@ -230,8 +186,8 @@ class BaseController:
         self.model.set_rhs('y', dy_dt)
         self.model.set_rhs('phi', dphi_dt)
         
-        self.goal_x=2
-        self.goal_y=1
+        self.goal_x=0
+        self.goal_y=0
 
         #setup
         self.model.setup()
@@ -254,7 +210,7 @@ class BaseController:
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
-        self.controller.bounds['upper','_u','v'] = 3#self.params['max_speed']
+        self.controller.bounds['upper','_u','v'] = self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
