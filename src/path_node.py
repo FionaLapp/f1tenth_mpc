@@ -52,7 +52,7 @@ def main(args):
     rospy.loginfo("starting up path node")
 
     desired_path = DesiredPath()
-    rate=rospy.Rate(2)
+    rate=rospy.Rate(5)
     counter=0
     path_length=len(desired_path.path.poses)
     while not rospy.is_shutdown():

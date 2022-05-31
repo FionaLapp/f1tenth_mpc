@@ -67,7 +67,11 @@ class BaseController:
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
         self.r2_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#if I comment this out, the car goes in circles
-
+    
+    def setup_desired_path(self):
+        pathfile_name=rospy.get_param('/path_node/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
+        self.path_data=pd.read_csv(pathfile_name)
+    
     def get_params(self):
         #I quite possibly came up with the worst way to do this
         rospy.loginfo("Getting params")
@@ -128,7 +132,7 @@ class BaseController:
 
     def pose_callback(self,pose_msg):
         a=pose_msg  
-        #print(pose_msg) 
+        print(pose_msg) 
 
         
 
@@ -154,10 +158,9 @@ class BaseController:
         Update goal position
         """
 
-        for i in range(10):
-            goal_x=data.poses[i].pose.position.x
-            goal_y=data.poses[i].pose.position.y
-            
+        goal_x=data.poses[0].pose.position.x
+        goal_y=data.poses[0].pose.position.y
+        
         self.goal_x=goal_x
         self.goal_y=goal_y
         vis_point=visualiser.TargetMarker(self.goal_x, self.goal_y, 1)
@@ -215,10 +218,10 @@ class BaseController:
         self.controller = MPC(self.model)
         suppress_ipopt = {'ipopt.print_level':0, 'ipopt.sb': 'yes', 'print_time':0}
         self.controller.set_param(nlpsol_opts = suppress_ipopt)
-        
+        self.n_horizon=5
         #optimiser parameters
         setup_mpc = {
-            'n_horizon': 20,
+            'n_horizon': self.n_horizon,
             't_step': 0.1,
             'n_robust': 1,
             'store_full_solution': True,
@@ -230,8 +233,8 @@ class BaseController:
         self.controller.bounds['lower','_u','delta'] = - self.params['max_steering_angle']
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
-        self.controller.bounds['lower','_u','v'] = 0.2 #not going backwards
-        self.controller.bounds['upper','_u','v'] = 0.5#self.params['max_speed']
+        self.controller.bounds['lower','_u','v'] = 0 #not going backwards
+        self.controller.bounds['upper','_u','v'] = 3#self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
@@ -274,7 +277,7 @@ class BaseController:
         
         template = self.controller.get_tvp_template()
 
-        for k in range(20 + 1):
+        for k in range(self.n_horizon + 1):
             
             template["_tvp", k, "target_x"]=self.goal_x
             template["_tvp", k, "target_y"] =self.goal_y
