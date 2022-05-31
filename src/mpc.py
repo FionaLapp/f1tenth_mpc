@@ -127,8 +127,8 @@ class BaseController:
 
 
     def pose_callback(self,pose_msg):
-
-        print(pose_msg) 
+        a=pose_msg  
+        #print(pose_msg) 
 
         
 
@@ -234,8 +234,8 @@ class BaseController:
         self.controller.bounds['upper','_u','v'] = 0.5#self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
-        self.controller.set_rterm(v=200)
-        self.controller.set_rterm(delta=200)
+        self.controller.set_rterm(v=1)
+        self.controller.set_rterm(delta=1)
 
         self.controller.setup()
 
