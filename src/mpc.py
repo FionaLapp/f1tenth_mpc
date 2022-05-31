@@ -72,7 +72,8 @@ class BaseController:
     def read_desired_path(self):
         pathfile_name=rospy.get_param('/mpc/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
         self.path_data=pd.read_csv(pathfile_name)
-
+        self.path_data_x=self.path_data[' x_m'].to_numpy()
+        self.path_data_y=self.path_data[' y_m'].to_numpy()                                            
         self.previous_x=0
         self.previous_y=0
         self.distance_travelled=0.0
@@ -140,7 +141,7 @@ class BaseController:
 
     def pose_callback(self,pose_msg):
         a=pose_msg  
-        #print(pose_msg) 
+        print(pose_msg) 
 
         
 
@@ -299,8 +300,12 @@ class BaseController:
 
         for k in range(self.n_horizon + 1):
             
-            template["_tvp", k, "target_x"]=self.path_data[' x_m'][self.index+3]
-            template["_tvp", k, "target_y"] =self.path_data[' y_m'][self.index+3]
+            template["_tvp", k, "target_x"]=self.path_data[' x_m'][self.index+k]
+            template["_tvp", k, "target_y"] =self.path_data[' y_m'][self.index+k]
+        vis_point=visualiser.TargetMarker(self.path_data_x[self.index+self.n_horizon], self.path_data_y[self.index+self.n_horizon], 1)
+        
+        #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
+        vis_point.draw_point()
         #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
         return template    
 

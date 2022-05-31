@@ -59,6 +59,11 @@ class TargetMarker(VisMarker):
         self.marker.points.append(p)
         self.marker.pose.position.x=x
         self.marker.pose.position.y=y
+        # for i in range(len(x)):
+        #     p= Point()
+            
+        #     p.x, p.y, p.z = x[i],y[i], 0
+        #     self.marker.points.append(p)
 
     
         
