@@ -66,8 +66,7 @@ class BaseController:
         
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
-        self.r2_sub=rospy.Subscriber('/racecar2/odom', Odometry, self.pose_callback, queue_size=1)
-
+        self.r2_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#if I comment this out, the car goes in circles
 
     def get_params(self):
         #I quite possibly came up with the worst way to do this
