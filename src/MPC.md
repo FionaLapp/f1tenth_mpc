@@ -31,15 +31,19 @@ From the optimal control sequence calculated by the controller (the one which mi
 Because the vehicle model is often quite complicated, both cost function and prediction function may/will need to be linearised to make the problem computationally feasible. This holds especially true since we want the optimisation problem to be convex in order to easily find a global solution and not get stuck in local extrema. This linearisation can be done along the predicted trajectory from the previous time step. Linearisation is only accurate close to the point(s) around which we linearise, but luckily we can assume that the car will drive somewhere near the previously predicted trajectory.
 
 ## The vehicle model
-The vehicle model used in this implementation is based on a simple kinematic bicycle model. (#TODO: Add details)
+The vehicle model used in this implementation is based on a simple kinematic bicycle model. In this case, both left and right tires are combined together onto a rigid body of mass $m$, the orogin of which is set at the center. The resulting "car" has two wheels, hence the name of the model.
+(#TODO: Add details)
 
 ## The objective function
 Generally, we can differentiate between 1-layer MPC (both path planning and path tracking in one controller) and 2-layer MPC (path planning is done separately from path tracking). The approach used in this implementation is a 2-layer approach that separates path planning and tracking. The MPC controller only concerns itself with tracking a desired path which was pre-computed through an unrelated process.
 
 In this first implementation, the desired path is simply read from a csv file copied from [this repository](https://github.com/f1tenth/f1tenth_racetracks). The race line given in this file minimises the summed curvature while staying within the boundaries of the race track.
-Since the file also contains the s-value along the raceline, i.e. the distance travelled at each data point, the controller simply tracks the car's travelled distance and finds the next target point by looking up this distance and selecting the next waypoint. 
-The objective function is then simply defined as:
-<code>objective=(target_x - state_x) ** 2 + (target_y - state_y) ** 2</code>
+
+Since the file also contains the s-value along the raceline, i.e. the distance travelled at each data point, the controller simply tracks the car's travelled distance and finds the next target point by looking up this distance and selecting the next waypoint.
+
+The objective function is then simply defined as: <code>objective=(target_x - state_x) ** 2 + (target_y - state_y) ** 2</code>
+
 Note that is almost to the Eulerian distance, except that we obstain from taking the square root of the term. Since the square root function is monotonically increasing for positive inputs (and the input consists of squares which are non-negative by definition), we can guarantee that any input which minimises this objective in the target domain would similarly minimise the eulerian distance. Neglecting the root will simply save unnecessary computation.
+
 While this is easy to implement and computationally quick, there are also disadvantages to this approach. Should the car, for whatever reason, deviate from the desired path before coming back to it, the real travelled distance is greater than anticipated and hence the target point will always be ahead of the car, even if the car finds it's way back onto the desired path. In particular, this might lead the car to crash in sharp curves if the target point is far enough ahead, since this implementation has no awareness of road boundaries yet.
 
