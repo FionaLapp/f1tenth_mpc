@@ -31,7 +31,8 @@ From the optimal control sequence calculated by the controller (the one which mi
 Because the vehicle model is often quite complicated, both cost function and prediction function may/will need to be linearised to make the problem computationally feasible. This holds especially true since we want the optimisation problem to be convex in order to easily find a global solution and not get stuck in local extrema. This linearisation can be done along the predicted trajectory from the previous time step. Linearisation is only accurate close to the point(s) around which we linearise, but luckily we can assume that the car will drive somewhere near the previously predicted trajectory.
 
 ## The vehicle model
-A simple vehicle model to consider is the kinematic bicycle model. In this case, both left and right tires are combined together onto a rigid body of mass $m$, the orogin of which is set at the center. The resulting "car" has two wheels, hence the name of the model. A schematic of the model can be found in this schematic by [Althoff and Würschling](https://gitlab.lrz.de/tum-cps/commonroad-vehicle-models/-/blob/master/vehicleModels_commonRoad.pdf): 
+# kinematic bicycle model
+A simple vehicle model to consider is the kinematic single track model. In this case, no wheel slip is considered (kinematic), both left and right tires are combined together onto a rigid body of mass $m$, the orogin of which is set at the center. The resulting "car" has two wheels, hence it is sometimes also referred to as the kinematic bicycle model.  A schematic of the model can be found in this schematic by [Althoff and Würschling](https://gitlab.lrz.de/tum-cps/commonroad-vehicle-models/-/blob/master/vehicleModels_commonRoad.pdf): 
 
 ![Schematic of kinematic bicycle model](https://github.com/FionaLapp/f1tenth_mpc/blob/master/src/kinematic_bicycle_model_schematic.png) 
 
@@ -44,16 +45,27 @@ s_y
 
 This leads to the following system of equations:
 $$\dot{\delta}=v_{delta}$$
-$$\dot{\psi}=\frac{v}{l_{wb}} * \tan{(\delta)}$$
 $$\dot{v}=a$$
+$$\dot{\psi}=\frac{v}{l_{wb}} * \tan{(\delta)}$$
 $$\dot{s_x}=v*\cos{(\psi)}$$
 $$\dot{s_y}=v*\sin{(\psi)}$$
+The first two equations are true by definition, while the last three are obtained through simple pythagorean geometry.
 
 We can further simplify the system if we assume that both $\delta$ and $v$ are constant over the length of the control horizon. In this case, $v_{\delta}=0$, $a=0$,  and instead we have $\delta$ and $v$ as control inputs while the system becomes:
 $$\dot{\psi}=\frac{v}{l_{wb}} * \tan{(\delta)}$$
 $$\dot{s_x}=v*\cos{(\psi)}$$
 $$\dot{s_y}=v*\sin{(\psi)}$$
-(#TODO: Add details)
+
+# bicycle model
+Using the above equations will give reasonably accurate results if the car is driven well below its handling limits. However, as speed increases, tire slip needs to be taken into consideration. This tire slip $\beta$ is defined as the angle of the current velocity with respect to the car's longitudinal axis. It is given by:
+$$\beta= \arctan{(\frac{\l_r}{l_{wb}}* \tan{(\delta)})}$$
+where $l_r$ denotes the distance from the rear wheel to the centre of mass.
+The corresponding state equations from above become:
+$$\dot{\psi}=\frac{v}{l_{wb}} * \tan{(\beta)}$$
+$$\dot{s_x}=v*\cos{(\psi + \beta)}$$
+$$\dot{s_y}=v*\sin{(\psi + \beta)}$$
+
+These are the equations currently used in the code.
 
 ## The objective function
 Generally, we can differentiate between 1-layer MPC (both path planning and path tracking in one controller) and 2-layer MPC (path planning is done separately from path tracking). The approach used in this implementation is a 2-layer approach that separates path planning and tracking. The MPC controller only concerns itself with tracking a desired path which was pre-computed through an unrelated process.
