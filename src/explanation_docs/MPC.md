@@ -31,7 +31,7 @@ From the optimal control sequence calculated by the controller (the one which mi
 Because the vehicle model is often quite complicated, both cost function and prediction function may/will need to be linearised to make the problem computationally feasible. This holds especially true since we want the optimisation problem to be convex in order to easily find a global solution and not get stuck in local extrema. This linearisation can be done along the predicted trajectory from the previous time step. Linearisation is only accurate close to the point(s) around which we linearise, but luckily we can assume that the car will drive somewhere near the previously predicted trajectory.
 
 ## The vehicle model
-# kinematic bicycle model
+### kinematic bicycle model
 A simple vehicle model to consider is the kinematic single track model. In this case, no wheel slip is considered (kinematic), both left and right tires are combined together onto a rigid body of mass $m$, the orogin of which is set at the center. The resulting "car" has two wheels, hence it is sometimes also referred to as the kinematic bicycle model.  A schematic of the model can be found in this schematic by [Althoff and Würschling](https://gitlab.lrz.de/tum-cps/commonroad-vehicle-models/-/blob/master/vehicleModels_commonRoad.pdf): 
 
 ![Schematic of kinematic bicycle model](https://github.com/FionaLapp/f1tenth_mpc/blob/master/src/explanation_docs/kinematic_bicycle_model_schematic.png) 
@@ -51,7 +51,7 @@ $$\dot{\psi}=\frac{v}{l_{wb}} * \tan{(\delta)}$$
 $$\dot{s_x}=v*\cos{(\psi)}$$
 $$\dot{s_y}=v*\sin{(\psi)}$$
 
-# bicycle model
+### bicycle model
 Using the above equations will give reasonably accurate results if the car is driven well below its handling limits. However, as speed increases, tire slip needs to be taken into consideration. This tire slip $\beta$ is defined as the angle of the current velocity with respect to the car's longitudinal axis. It is given by:
 $$\beta= \arctan{(\frac{l_r}{l_{wb}}* \tan{(\delta)})}$$
 where $l_r$ denotes the distance from the rear wheel to the centre of mass.
