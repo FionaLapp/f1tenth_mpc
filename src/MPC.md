@@ -36,12 +36,7 @@ A simple vehicle model to consider is the kinematic single track model. In this 
 
 ![Schematic of kinematic bicycle model](https://github.com/FionaLapp/f1tenth_mpc/blob/master/src/kinematic_bicycle_model_schematic.png) 
 
-Here, the state variables of the car are the position given by 
-$\begin{bmatrix}
-s_x \\ 
-s_y 
-\end{bmatrix}$
-, the heading angle $\psi$, the velocity $v$ and the steering angle $/delta§. The wheelbase $l_{wb}$ is a constant parameter. Control inputs are the accelleration $a$ and the steering velocity $v_{delta}$.
+Here, the state variables of the car are the position given by $s_x$ and $s_y$, the x and y coordinates respectively, as well as the heading angle $\psi$, the velocity $v$ and the steering angle $/delta$. The wheelbase $l_{wb}$ is a constant parameter. Control inputs are the accelleration $a$ and the steering velocity $v_{delta}$.
 
 This leads to the following system of equations:
 $$\dot{\delta}=v_{delta}$$
@@ -58,7 +53,7 @@ $$\dot{s_y}=v*\sin{(\psi)}$$
 
 # bicycle model
 Using the above equations will give reasonably accurate results if the car is driven well below its handling limits. However, as speed increases, tire slip needs to be taken into consideration. This tire slip $\beta$ is defined as the angle of the current velocity with respect to the car's longitudinal axis. It is given by:
-$$\beta= \arctan{(\frac{\l_r}{l_{wb}}* \tan{(\delta)})}$$
+$$\beta= \arctan{(\frac{l_r}{l_{wb}}* \tan{(\delta)})}$$
 where $l_r$ denotes the distance from the rear wheel to the centre of mass.
 The corresponding state equations from above become:
 $$\dot{\psi}=\frac{v}{l_{wb}} * \tan{(\beta)}$$
