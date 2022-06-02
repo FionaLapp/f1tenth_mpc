@@ -34,7 +34,7 @@ Because the vehicle model is often quite complicated, both cost function and pre
 # kinematic bicycle model
 A simple vehicle model to consider is the kinematic single track model. In this case, no wheel slip is considered (kinematic), both left and right tires are combined together onto a rigid body of mass $m$, the orogin of which is set at the center. The resulting "car" has two wheels, hence it is sometimes also referred to as the kinematic bicycle model.  A schematic of the model can be found in this schematic by [Althoff and Würschling](https://gitlab.lrz.de/tum-cps/commonroad-vehicle-models/-/blob/master/vehicleModels_commonRoad.pdf): 
 
-![Schematic of kinematic bicycle model](https://github.com/FionaLapp/f1tenth_mpc/blob/master/src/kinematic_bicycle_model_schematic.png) 
+![Schematic of kinematic bicycle model](https://github.com/FionaLapp/f1tenth_mpc/blob/master/src/explanation_docs/kinematic_bicycle_model_schematic.png) 
 
 Here, the state variables of the car are the position given by $s_x$ and $s_y$, the x and y coordinates respectively, as well as the heading angle $\psi$, the velocity $v$ and the steering angle $/delta$. The wheelbase $l_{wb}$ is a constant parameter. Control inputs are the accelleration $a$ and the steering velocity $v_{delta}$.
 
