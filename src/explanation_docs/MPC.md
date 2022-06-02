@@ -36,10 +36,10 @@ A simple vehicle model to consider is the kinematic single track model. In this 
 
 ![Schematic of kinematic bicycle model](https://github.com/FionaLapp/f1tenth_mpc/blob/master/src/explanation_docs/kinematic_bicycle_model_schematic.png) 
 
-Here, the state variables of the car are the position given by $s_x$ and $s_y$, the x and y coordinates respectively, as well as the heading angle $\psi$, the velocity $v$ and the steering angle $/delta$. The wheelbase $l_{wb}$ is a constant parameter. Control inputs are the accelleration $a$ and the steering velocity $v_{delta}$.
+Here, the state variables of the car are the position given by $s_x$ and $s_y$, the x and y coordinates respectively, as well as the heading angle $\psi$, the velocity $v$ and the steering angle $\delta$. The wheelbase $l_{wb}$ is a constant parameter. Control inputs are the accelleration $a$ and the steering velocity $v_{delta}$.
 
 This leads to the following system of equations:
-$$\dot{\delta}=v_{delta}$$
+$$\dot{\delta}=v_{\delta}$$
 $$\dot{v}=a$$
 $$\dot{\psi}=\frac{v}{l_{wb}} * \tan{(\delta)}$$
 $$\dot{s_x}=v*\cos{(\psi)}$$
