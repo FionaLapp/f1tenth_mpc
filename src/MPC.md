@@ -31,7 +31,11 @@ From the optimal control sequence calculated by the controller (the one which mi
 Because the vehicle model is often quite complicated, both cost function and prediction function may/will need to be linearised to make the problem computationally feasible. This holds especially true since we want the optimisation problem to be convex in order to easily find a global solution and not get stuck in local extrema. This linearisation can be done along the predicted trajectory from the previous time step. Linearisation is only accurate close to the point(s) around which we linearise, but luckily we can assume that the car will drive somewhere near the previously predicted trajectory.
 
 ## The vehicle model
-The vehicle model used in this implementation is based on a simple kinematic bicycle model. In this case, both left and right tires are combined together onto a rigid body of mass $m$, the orogin of which is set at the center. The resulting "car" has two wheels, hence the name of the model.
+A simple vehicle model to consider is the kinematic bicycle model. In this case, both left and right tires are combined together onto a rigid body of mass $m$, the orogin of which is set at the center. The resulting "car" has two wheels, hence the name of the model. A schematic of the model can be found in this figure: 
+
+image:https://github.com/FionaLapp/f1tenth_mpc/blob/master/src/kinematic_bicycle_model_schematic.png
+
+([source](https://gitlab.lrz.de/tum-cps/commonroad-vehicle-models/-/blob/master/vehicleModels_commonRoad.pdf))
 (#TODO: Add details)
 
 ## The objective function
