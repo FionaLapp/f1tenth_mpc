@@ -33,7 +33,7 @@ Because the vehicle model is often quite complicated, both cost function and pre
 ## The vehicle model
 A simple vehicle model to consider is the kinematic bicycle model. In this case, both left and right tires are combined together onto a rigid body of mass $m$, the orogin of which is set at the center. The resulting "car" has two wheels, hence the name of the model. A schematic of the model can be found in this figure: 
 
-image:https://github.com/FionaLapp/f1tenth_mpc/blob/master/src/kinematic_bicycle_model_schematic.png
+![Schematic of kinematic bicycle model](https://github.com/FionaLapp/f1tenth_mpc/blob/master/src/kinematic_bicycle_model_schematic.png)
 
 ([source](https://gitlab.lrz.de/tum-cps/commonroad-vehicle-models/-/blob/master/vehicleModels_commonRoad.pdf))
 (#TODO: Add details)
