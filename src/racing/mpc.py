@@ -19,7 +19,6 @@ import casadi
 # Import do_mpc package:
 from do_mpc.model import Model
 from do_mpc.controller import MPC
-from do_mpc.simulator import Simulator
 from do_mpc.data import MPCData
 
 
@@ -197,22 +196,6 @@ class BaseController(ABC):
         
         rospy.loginfo("MPC set up finished")
 
-        #setup simulator
-        self.simulator = Simulator(self.model)
-        self.simulator.set_param(t_step = 0.1)
-        self.simulator.set_tvp_fun(self.prepare_goal_template_simulator)
-        self.simulator.x0 = state_0
-        self.simulated_x=state_0
-        self.simulator.setup()
-
-    def prepare_goal_template_simulator(self, _):
-    
-        template = self.simulator.get_tvp_template()
-        template['target_x']=self.goal_x
-        template['target_y']=self.goal_y
-            
-
-        return template
     
         
   
