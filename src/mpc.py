@@ -44,9 +44,7 @@ class BaseController:
     """
     def __init__(self):
         self.params=self.get_params()
-        
         self.read_desired_path()
-        
         self.setup_node()
         self.setup_mpc()
         
@@ -59,7 +57,6 @@ class BaseController:
         localisation_topic= '/odom' #change to a different topic if applicable (e.g. if using hector)
         drive_topic = '/drive'
         debug_topic= '/debug'
-        pose_topic='/initialpose'
 
 
         self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)
@@ -67,11 +64,11 @@ class BaseController:
     
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
-        self.pose_pub=rospy.Publisher(pose_topic, PoseWithCovarianceStamped, queue_size=1)
-
+        
     def read_desired_path(self):
         pathfile_name=rospy.get_param('/mpc/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
         self.path_data=pd.read_csv(pathfile_name)
+        self.path_length=self.path_data.shape[0]
         self.path_data_x=self.path_data[' x_m'].to_numpy()
         self.path_data_y=self.path_data[' y_m'].to_numpy()                                            
         self.previous_x=0
@@ -159,8 +156,8 @@ class BaseController:
         self.state= np.array([x,y, phi])
         
         #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
-        self.index=np.searchsorted(self.path_data[' s_m'], self.distance_travelled, side='right', sorter=None)
-        rospy.loginfo(self.index)
+        self.index=np.searchsorted(self.path_data[' s_m'], self.distance_travelled, side='right', sorter=None)%self.path_length
+        #rospy.loginfo(self.index)
         self.make_mpc_step(self.state)
 
     def setup_mpc(self):
@@ -216,7 +213,7 @@ class BaseController:
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
-        self.controller.bounds['upper','_u','v'] = self.params['max_speed']
+        self.controller.bounds['upper','_u','v'] = 3#self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
