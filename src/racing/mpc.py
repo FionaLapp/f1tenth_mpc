@@ -4,13 +4,9 @@ Created on Thu May 12 12:06:18 2022
 @author: Fiona
 """
 from __future__ import print_function
-from abc import abstractmethod
-from importlib.machinery import PathFinder
 import sys
-import math
 import numpy as np
-import pandas as pd
-
+from abc import ABC, abstractmethod
 
 #MPC imports
 # Add do_mpc to path. This is not necessary if it was installed via pip.
@@ -30,25 +26,17 @@ from do_mpc.data import MPCData
 #ROS Imports
 import rospy
 from nav_msgs.msg import Odometry
-#from nav_msgs.msg import Path
-from sensor_msgs.msg import Image, LaserScan
-from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
-from geometry_msgs.msg import PoseWithCovarianceStamped
-from std_msgs.msg import String, ColorRGBA
-from visualization_msgs.msg import Marker
-from tf.transformations import euler_from_quaternion
+from ackermann_msgs.msg import AckermannDriveStamped
 
-from helper import visualiser
   
 # importing 
-from helper import visualiser as visualiser
+import helper.visualiser as visualiser
 
-class BaseController:
+class BaseController(ABC):
     """ 
     """
     def __init__(self):
         self.params=self.get_params()
-        
         self.setup_node()
         self.setup_mpc()
         
@@ -60,14 +48,13 @@ class BaseController:
         
         localisation_topic= '/odom' #change to a different topic if applicable (e.g. if using hector)
         drive_topic = '/drive'
-        debug_topic= '/debug'
 
 
         self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)
         self.fixing_a_weird_bug_and_not_much_else_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#subscribing to /odom a second time somehow makes the first one work, otherwise it gets stuck at the origin
     
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
-        self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
+        
         
         
     

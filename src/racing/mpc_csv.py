@@ -4,10 +4,7 @@ Created on Thu May 12 12:06:18 2022
 @author: Fiona
 """
 from __future__ import print_function
-from importlib.machinery import PathFinder
-from abc import ABC
 import sys
-import math
 import numpy as np
 import pandas as pd
 
@@ -17,28 +14,13 @@ import pandas as pd
 import sys
 sys.path.append('../../')
 
-import matplotlib.pyplot as plt
-import casadi
-
-# Import do_mpc package:
-from do_mpc.model import Model
-from do_mpc.controller import MPC
-from do_mpc.simulator import Simulator
-from do_mpc.data import MPCData
 
 
 #ROS Imports
 import rospy
 from nav_msgs.msg import Odometry
-from nav_msgs.msg import Path
-from sensor_msgs.msg import Image, LaserScan
-from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
-from geometry_msgs.msg import PoseWithCovarianceStamped
-from std_msgs.msg import String, ColorRGBA
-from visualization_msgs.msg import Marker
 from tf.transformations import euler_from_quaternion
 
-import helper.visualiser as visualiser
 import mpc
 
 class ReadCSVController(mpc.BaseController):
