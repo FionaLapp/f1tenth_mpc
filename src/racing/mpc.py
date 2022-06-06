@@ -4,6 +4,7 @@ Created on Thu May 12 12:06:18 2022
 @author: Fiona
 """
 from __future__ import print_function
+from abc import abstractmethod
 from importlib.machinery import PathFinder
 import sys
 import math
@@ -39,8 +40,7 @@ from tf.transformations import euler_from_quaternion
 
 from helper import visualiser
   
-# importing
-sys.path.append('~/ws/src/f1tenth_mpc/src')  
+# importing 
 from helper import visualiser as visualiser
 
 class BaseController:
@@ -48,7 +48,7 @@ class BaseController:
     """
     def __init__(self):
         self.params=self.get_params()
-        self.read_desired_path()
+        
         self.setup_node()
         self.setup_mpc()
         
@@ -69,17 +69,6 @@ class BaseController:
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
         
-    def read_desired_path(self):
-        pathfile_name=rospy.get_param('/mpc/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
-        self.path_data=pd.read_csv(pathfile_name)
-        self.path_length=self.path_data.shape[0]
-        self.path_data_x=self.path_data[' x_m'].to_numpy()
-        self.path_data_y=self.path_data[' y_m'].to_numpy()                                            
-        self.previous_x=0
-        self.previous_y=0
-        self.distance_travelled=0.0
-        self.index=0
-    
         
     
     def get_params(self):
@@ -140,29 +129,13 @@ class BaseController:
         #print(pose_msg) 
 
         
-
+    @abstractmethod
     def localisation_callback(self, data:Odometry):
         """
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
+        Please call make_mpc_step in this method and update goal
         """
-        #update distance travelled
-        delta_s=np.sqrt((self.previous_x-self.state[0])**2+(self.previous_y-self.state[1])**2)
-        self.distance_travelled=self.distance_travelled+delta_s
-                
-        #update current state
-        self.previous_x=self.state[0]
-        self.previous_y=self.state[1]
-        x=data.pose.pose.position.x
-        y=data.pose.pose.position.y
-        orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
-        (roll, pitch, phi) = euler_from_quaternion (orientation_list)
-        #rospy.loginfo("{}, {}, {}".format(x, y, phi))
-        self.state= np.array([x,y, phi])
         
-        #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
-        self.index=np.searchsorted(self.path_data[' s_m'], self.distance_travelled, side='right', sorter=None)%self.path_length
-        #rospy.loginfo(self.index)
-        self.make_mpc_step(self.state)
 
     def setup_mpc(self):
         rospy.loginfo("setting up MPC")
@@ -291,18 +264,6 @@ class BaseController:
         
         return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 
         
-
-def main(args):
-    
-    
-    rospy.init_node("mpc_node", anonymous=True)
-    rospy.loginfo("starting up mpc node")
-    model_predictive_control =BaseController()
-    rospy.sleep(0.1)
-    rospy.spin()
-
-if __name__=='__main__':
-	main(sys.argv)
 
 
 
