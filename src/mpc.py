@@ -32,7 +32,7 @@ from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path
 from sensor_msgs.msg import Image, LaserScan
 from ackermann_msgs.msg import AckermannDriveStamped, AckermannDrive
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from std_msgs.msg import String, ColorRGBA
 from visualization_msgs.msg import Marker
 from tf.transformations import euler_from_quaternion
@@ -44,25 +44,31 @@ class BaseController:
     """
     def __init__(self):
         self.params=self.get_params()
+        
         self.read_desired_path()
+        
         self.setup_node()
         self.setup_mpc()
         
-        
-        
+       
+
+
     def setup_node(self):
         #Topics & Subs, Pubs
         
         localisation_topic= '/odom' #change to a different topic if applicable (e.g. if using hector)
         drive_topic = '/drive'
         debug_topic= '/debug'
+        pose_topic='/initialpose'
+
 
         self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)
         self.fixing_a_weird_bug_and_not_much_else_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#subscribing to /odom a second time somehow makes the first one work, otherwise it gets stuck at the origin
     
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.debug_pub=rospy.Publisher(debug_topic, String, queue_size=1)
-        
+        self.pose_pub=rospy.Publisher(pose_topic, PoseWithCovarianceStamped, queue_size=1)
+
     def read_desired_path(self):
         pathfile_name=rospy.get_param('/mpc/directory')+'/src/maps/Sochi/Sochi_raceline.csv'
         self.path_data=pd.read_csv(pathfile_name)
@@ -130,7 +136,7 @@ class BaseController:
 
     def pose_callback(self,pose_msg):
         a=pose_msg  
-        print(pose_msg) 
+        #print(pose_msg) 
 
         
 
