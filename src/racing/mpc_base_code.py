@@ -123,7 +123,7 @@ class BaseController(ABC):
         """
         
 
-    def setup_mpc(self):
+    def setup_mpc(self, n_horizon=5):
         rospy.loginfo("setting up MPC")
         model_type = 'continuous' # either 'discrete' or 'continuous'
         self.model = Model(model_type)
@@ -160,7 +160,7 @@ class BaseController(ABC):
         self.controller = MPC(self.model)
         suppress_ipopt = {'ipopt.print_level':0, 'ipopt.sb': 'yes', 'print_time':0}
         self.controller.set_param(nlpsol_opts = suppress_ipopt)
-        self.n_horizon=5
+        self.n_horizon=n_horizon
         #optimiser parameters
         setup_mpc = {
             'n_horizon': self.n_horizon,

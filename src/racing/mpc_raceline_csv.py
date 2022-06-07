@@ -21,9 +21,9 @@ import rospy
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
-import mpc
+import mpc_base_code as mpc_base_code
 
-class ReadCSVController(mpc.BaseController):
+class ReadCSVController(mpc_base_code.BaseController):
     """ 
     """
     def __init__(self):
