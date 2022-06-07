@@ -121,6 +121,7 @@ class BaseController(ABC):
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         Please call make_mpc_step in this method and update goal
         """
+        self.path_length=1#
         
 
     def setup_mpc(self, n_horizon=5):
@@ -176,7 +177,7 @@ class BaseController(ABC):
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
-        self.controller.bounds['upper','_u','v'] = 3#self.params['max_speed']
+        self.controller.bounds['upper','_u','v'] = self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
@@ -206,9 +207,9 @@ class BaseController(ABC):
 
         for k in range(self.n_horizon + 1):
             
-            template["_tvp", k, "target_x"]=self.path_data[' x_m'][self.index+k]
-            template["_tvp", k, "target_y"] =self.path_data[' y_m'][self.index+k]
-        vis_point=visualiser.TargetMarker(self.path_data_x[self.index+self.n_horizon], self.path_data_y[self.index+self.n_horizon], 1)
+            template["_tvp", k, "target_x"]=self.path_data[' x_m'][(self.index+k)%self.path_length]
+            template["_tvp", k, "target_y"] =self.path_data[' y_m'][(self.index+k)%self.path_length]
+        vis_point=visualiser.TargetMarker(self.path_data_x[(self.index+self.n_horizon)%self.path_length], self.path_data_y[(self.index+self.n_horizon)%self.path_length], 1)
         
         #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
         vis_point.draw_point()

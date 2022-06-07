@@ -38,6 +38,7 @@ class ReadCSVController(mpc_base_code.BaseController):
     def read_desired_path(self):
         pathfile_name=rospy.get_param('/mpc/directory')+'/src/maps/Sochi/Sochi_centerline.csv'
         self.path_data=pd.read_csv(pathfile_name)
+        print(self.path_data.keys())
         self.path_length=self.path_data.shape[0]
         self.path_data_x=self.path_data[' x_m'].to_numpy()
         self.path_data_y=self.path_data[' y_m'].to_numpy()                                            
@@ -64,7 +65,7 @@ class ReadCSVController(mpc_base_code.BaseController):
             #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
             
-            self.index=distances_to_current_point.argmin()+5
+            self.index=distances_to_current_point.argmin()+5 %1170
             #rospy.loginfo(self.index)
             self.make_mpc_step(self.state)
         except AttributeError:
