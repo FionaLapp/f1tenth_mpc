@@ -65,7 +65,7 @@ class ReadCSVController(mpc_base_code.BaseController):
             #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
             
-            self.index=distances_to_current_point.argmin()+5 %1170
+            self.index=distances_to_current_point.argmin()+2 %1170
             #rospy.loginfo(self.index)
             self.make_mpc_step(self.state)
         except AttributeError:

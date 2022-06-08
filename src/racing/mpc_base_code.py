@@ -46,7 +46,7 @@ class BaseController(ABC):
         #Topics & Subs, Pubs
         
         localisation_topic= '/odom' #change to a different topic if applicable (e.g. if using hector)
-        drive_topic = '/drive'
+        drive_topic = '/nav'
 
 
         self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)
@@ -177,7 +177,7 @@ class BaseController(ABC):
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
-        self.controller.bounds['upper','_u','v'] = self.params['max_speed']
+        self.controller.bounds['upper','_u','v'] = 3#self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
