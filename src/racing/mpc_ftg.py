@@ -23,34 +23,28 @@ from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
 import mpc_base_code as mpc_base_code
+import helper.visualiser as visualiser
 
 class FTGController(mpc_base_code.BaseController):
     """ 
     """
     def __init__(self):
+        self.setup_laser_scan()
+        self.t_x=0
+        self.t_y=0
+        print(self.t_x)
         super().__init__()
         
-    def  setup_node(self) :
-        super().setup_node()
-
-        laser_topic= '/scan'
-        laser_sub=rospy.Subscriber(laser_topic, LaserScan, self.scan_callback)
         
-    def  scan_callback(self, data):
-        pass
 
+    def  setup_laser_scan(self) :
+        laser_topic= '/scan'
+        laser_sub=rospy.Subscriber(laser_topic, LaserScan, self.lidar_callback)
+        #super().setup_node()
 
-    def read_desired_path(self):
-        pathfile_name=rospy.get_param('/mpc/directory')+'/src/maps/Sochi/Sochi_centerline.csv'
-        self.path_data=pd.read_csv(pathfile_name)
-        print(self.path_data.keys())
-        self.path_length=self.path_data.shape[0]
-        self.path_data_x=self.path_data[' x_m'].to_numpy()
-        self.path_data_y=self.path_data[' y_m'].to_numpy()                                            
-        self.previous_x=0
-        self.previous_y=0
-        self.distance_travelled=0.0
-        self.index=0
+        
+       
+
     
 
     def localisation_callback(self, data:Odometry):
@@ -66,12 +60,6 @@ class FTGController(mpc_base_code.BaseController):
             (roll, pitch, phi) = euler_from_quaternion (orientation_list)
             #rospy.loginfo("{}, {}, {}".format(x, y, phi))
             self.state= np.array([x,y, phi])
-            
-            #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
-            distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
-            
-            self.index=distances_to_current_point.argmin()+5 %1170
-            #rospy.loginfo(self.index)
             self.make_mpc_step(self.state)
         except AttributeError:
             print("Initialisation not finished")
@@ -85,7 +73,7 @@ class FTGController(mpc_base_code.BaseController):
         kernel_size = 4
         kernel = np.ones(kernel_size) / kernel_size
         ranges_convolved = np.convolve(ranges, kernel, mode='same') #averaging over every 4 elements
-        proc_ranges = np.where[ranges_convolved<=3, ranges_convolved, 3] #set everything larger than 3 to 3
+        proc_ranges = np.where(ranges_convolved<=3, ranges_convolved, 3) #set everything larger than 3 to 3
         return proc_ranges
 
     def find_max_gap(self, ranges):
@@ -100,23 +88,25 @@ class FTGController(mpc_base_code.BaseController):
         end_index=gap_index_array[index_in_gap_index_array+1] # the gap ends at the next non-gap
         return start_index, end_index
     
-    def find_best_point(self, start_i, end_i, ranges):
+    def find_best_point_index(self, start_i, end_i, ranges):
         """Start_i & end_i are start and end indicies of max-gap range, respectively
         Return index of best point in ranges
 	Naive: Choose the furthest point within ranges and go there
         """
         gap_array=ranges[start_i: end_i]
-        furthest_point_index=np.argmax[gap_array]
-        return None #TODOsss
+        furthest_point_index=np.argmax(gap_array)
+        return  furthest_point_index
 
-    def lidar_callback(self, data):
+
+    def lidar_callback(self, data:LaserScan):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
         """
         ranges = data.ranges
+
         proc_ranges = self.preprocess_lidar(ranges)
 
         #Find closest point to LiDAR
-        closest_point_index=np.argmin[proc_ranges]
+        closest_point_index=np.argmin(proc_ranges)
 
         #Eliminate all points inside 'bubble' (set them to zero) 
         bubble_radius=3
@@ -126,10 +116,30 @@ class FTGController(mpc_base_code.BaseController):
         start_index, end_index=self.find_max_gap(proc_ranges)
 
         #Find the best point in the gap 
-        point=self.find_best_point(start_index, end_index, proc_ranges)
-        #Publish Drive message
-    
+        best_point_index=self.find_best_point_index(start_index, end_index, proc_ranges)
         
+        #calculate x and y value, given the index of the lidar point
+        laser_angle = (best_point_index * data.angle_increment) + data.angle_min
+        heading_angle=self.state[2]
+        rotated_angle = laser_angle + heading_angle
+        self.t_x = proc_ranges[best_point_index] * np.cos(rotated_angle) + self.state[0]
+        self.t_y = proc_ranges[best_point_index]  * np.sin(rotated_angle) + self.state[1]
+        
+
+    def prepare_goal_template(self, t_now):
+        
+        template = self.controller.get_tvp_template()
+
+        for k in range(self.n_horizon + 1):
+            
+            template["_tvp", k, "target_x"]=self.t_x
+            template["_tvp", k, "target_y"] =self.t_y
+        vis_point=visualiser.TargetMarker(self.t_x, self.t_y, 1)
+        
+        #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
+        vis_point.draw_point()
+        #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
+        return template     
   
 
 def main(args):
