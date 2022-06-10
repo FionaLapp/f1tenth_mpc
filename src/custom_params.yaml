@@ -5,4 +5,4 @@ directory: ~/ws/src/f1tenth_mpc
 start_x: 0.8007017
 start_y: -0.2753365
 start_psi: 4.1421595 #this translates to an orientation of z: 0.877 w:-0.480 but I've just hardcoded that into the launchfile
-
+ftg_safety_raduis: 4

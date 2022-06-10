@@ -84,6 +84,10 @@ class BaseController(ABC):
         params['scan_field_of_view']= rospy.get_param(namespace+'scan_field_of_view', 6.2831853) #4.71 # radians
         # The distance from the center of the rear axis (base_link) to the lidar
         params['scan_distance_to_base_link']= rospy.get_param(namespace+'scan_distance_to_base_link', 0.275) # meters
+        
+        #custom stuff
+        params['directory']=rospy.get_param(namespace+'directory')
+        params['ftg_safety_raduis']=rospy.get_param(namespace+'ftg_safety_raduis')
         return params    
 
     def make_mpc_step(self, x_state):

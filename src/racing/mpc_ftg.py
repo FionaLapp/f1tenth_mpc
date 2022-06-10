@@ -82,20 +82,32 @@ class FTGController(mpc_base_code.BaseController):
             1.Setting each value to the mean over some window
             2.Rejecting high values (eg. > 3m)
         """
-        proc_ranges = ranges
+        kernel_size = 4
+        kernel = np.ones(kernel_size) / kernel_size
+        ranges_convolved = np.convolve(ranges, kernel, mode='same') #averaging over every 4 elements
+        proc_ranges = np.where[ranges_convolved<=3, ranges_convolved, 3] #set everything larger than 3 to 3
         return proc_ranges
 
-    def find_max_gap(self, free_space_ranges):
+    def find_max_gap(self, ranges):
         """ Return the start index & end index of the max gap in free_space_ranges
         """
-        return None
+        gap_index_array=np.argwhere(ranges<3) #indices of all elements that aren't gaps
+        gap_index_array=gap_index_array.flatten()
+        gap_size=gap_index_array[1:]-gap_index_array[:-1] #find the difference between consecutive gap-indices (if thiis is 1, they are adjacent, if it is 2, there is a gap of size 1, etc.)
+        
+        index_in_gap_index_array=np.argmax(gap_size)#find the index of the largest gap (this index refers to the gap_index_array)
+        start_index=gap_index_array[index_in_gap_index_array]+1 #the gap starts one index after the non-gap
+        end_index=gap_index_array[index_in_gap_index_array+1] # the gap ends at the next non-gap
+        return start_index, end_index
     
     def find_best_point(self, start_i, end_i, ranges):
         """Start_i & end_i are start and end indicies of max-gap range, respectively
         Return index of best point in ranges
 	Naive: Choose the furthest point within ranges and go there
         """
-        return None
+        gap_array=ranges[start_i: end_i]
+        furthest_point_index=np.argmax[gap_array]
+        return None #TODOsss
 
     def lidar_callback(self, data):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
@@ -104,13 +116,17 @@ class FTGController(mpc_base_code.BaseController):
         proc_ranges = self.preprocess_lidar(ranges)
 
         #Find closest point to LiDAR
+        closest_point_index=np.argmin[proc_ranges]
 
         #Eliminate all points inside 'bubble' (set them to zero) 
-
+        bubble_radius=3
+        proc_ranges[closest_point_index-bubble_radius:closest_point_index+bubble_radius]=0
+ 
         #Find max length gap 
+        start_index, end_index=self.find_max_gap(proc_ranges)
 
         #Find the best point in the gap 
-
+        point=self.find_best_point(start_index, end_index, proc_ranges)
         #Publish Drive message
     
         
