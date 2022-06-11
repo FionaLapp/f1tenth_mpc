@@ -29,12 +29,14 @@ class FTGController(mpc_base_code.BaseController):
     """ 
     """
     def __init__(self):
-        self.setup_laser_scan()
         self.t_x=0
         self.t_y=0
-        sself.state=[0,0,0]
-        print(self.t_x)
+        self.state=[0,0,0]
         super().__init__()
+        self.setup_laser_scan()
+        
+        print(self.t_x)
+        
         
         
 
@@ -142,7 +144,7 @@ class FTGController(mpc_base_code.BaseController):
             
             template["_tvp", k, "target_x"]=self.t_x
             template["_tvp", k, "target_y"] =self.t_y
-        vis_point=visualiser.TargetMarker(self.t_x, self.t_y, 1)
+        vis_point=visualiser.GapMarker(self.t_x, self.t_y, 1)
         
         #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
         vis_point.draw_point()
