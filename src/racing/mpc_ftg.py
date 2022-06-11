@@ -32,6 +32,7 @@ class FTGController(mpc_base_code.BaseController):
         self.setup_laser_scan()
         self.t_x=0
         self.t_y=0
+        sself.state=[0,0,0]
         print(self.t_x)
         super().__init__()
         
@@ -93,9 +94,19 @@ class FTGController(mpc_base_code.BaseController):
         Return index of best point in ranges
 	Naive: Choose the furthest point within ranges and go there
         """
-        gap_array=ranges[start_i: end_i]
+        gap_array=range
+        #return int(end_i-start_i/2)
         furthest_point_index=np.argmax(gap_array)
         return  furthest_point_index
+
+    def lidar_to_xy(self, ranges, index, angle_increment, angle_min):
+        laser_angle = (index * angle_increment) + angle_min
+        heading_angle=self.state[2]
+        rotated_angle = laser_angle + heading_angle
+        p_x = ranges[index] * np.cos(rotated_angle) + self.state[0]
+        p_y = ranges[index]  * np.sin(rotated_angle) + self.state[1]
+        return p_x, p_y
+        
 
 
     def lidar_callback(self, data:LaserScan):
@@ -119,11 +130,8 @@ class FTGController(mpc_base_code.BaseController):
         best_point_index=self.find_best_point_index(start_index, end_index, proc_ranges)
         
         #calculate x and y value, given the index of the lidar point
-        laser_angle = (best_point_index * data.angle_increment) + data.angle_min
-        heading_angle=self.state[2]
-        rotated_angle = laser_angle + heading_angle
-        self.t_x = proc_ranges[best_point_index] * np.cos(rotated_angle) + self.state[0]
-        self.t_y = proc_ranges[best_point_index]  * np.sin(rotated_angle) + self.state[1]
+        
+        self.t_x, self.t_y=self.lidar_to_xy(proc_ranges, best_point_index, data.angle_increment, data.angle_min)
         
 
     def prepare_goal_template(self, t_now):
