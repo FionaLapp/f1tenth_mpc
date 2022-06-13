@@ -193,7 +193,7 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-      Pose Color: 0; 255; 100, 1.0
+      Pose Color: 0; 255; 0, 0.5
       Head Diameter: 0.30000001192092896
       Head Length: 0.010000000298023224
       Length: 0.20000001192092896

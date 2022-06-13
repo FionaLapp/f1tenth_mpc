@@ -97,8 +97,8 @@ class BaseController(ABC):
         #plotting the predicted  trajectorry
         x_pred=self.controller.data.prediction(('_x', 'x')).flatten()
         y_pred=self.controller.data.prediction(('_x', 'y')).flatten()
-        vis_point=visualiser.TrajectoryMarker(x_pred, y_pred, 1)  #somehow this dooesn't show up in the right colour or line thickness but for now it'll do
-        vis_point.draw_point()
+        #vis_point=visualiser.TrajectoryMarker(x_pred, y_pred, 1)  #somehow this dooesn't show up in the right colour or line thickness but for now it'll do
+        #vis_point.draw_point()
         
         #sending control input to /drive topic
         delta=u[0]

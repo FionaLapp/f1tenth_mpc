@@ -35,9 +35,6 @@ class FTGController(mpc_base_code.BaseController):
         super().__init__()
         self.setup_laser_scan()
         
-        print(self.t_x)
-        
-        
         
 
     def  setup_laser_scan(self) :
@@ -63,7 +60,7 @@ class FTGController(mpc_base_code.BaseController):
             (roll, pitch, phi) = euler_from_quaternion (orientation_list)
             #rospy.loginfo("{}, {}, {}".format(x, y, phi))
             self.state= np.array([x,y, phi])
-            self.make_mpc_step(self.state)
+            #self.make_mpc_step(self.state)
         except AttributeError:
             print("Initialisation not finished")
     
@@ -134,7 +131,12 @@ class FTGController(mpc_base_code.BaseController):
         #calculate x and y value, given the index of the lidar point
         
         self.t_x, self.t_y=self.lidar_to_xy(proc_ranges, best_point_index, data.angle_increment, data.angle_min)
-        
+        start_x, start_y=self.lidar_to_xy(proc_ranges, start_index, data.angle_increment, data.angle_min)
+        end_x, end_y=self.lidar_to_xy(proc_ranges, end_index, data.angle_increment, data.angle_min)
+        vis_point=visualiser.GapMarker([start_x, end_x], [start_y, end_y], 1)
+        print("x:{}, y:{}".format(self.t_x, self.t_y))
+        #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
+        vis_point.draw_point()
 
     def prepare_goal_template(self, t_now):
         
@@ -144,11 +146,6 @@ class FTGController(mpc_base_code.BaseController):
             
             template["_tvp", k, "target_x"]=self.t_x
             template["_tvp", k, "target_y"] =self.t_y
-        vis_point=visualiser.GapMarker(self.t_x, self.t_y, 1)
-        
-        #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
-        vis_point.draw_point()
-        #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
         return template     
   
 
