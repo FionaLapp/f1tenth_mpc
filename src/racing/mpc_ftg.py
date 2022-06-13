@@ -4,6 +4,7 @@ Created on Thu May 12 12:06:18 2022
 @author: Fiona
 """
 from __future__ import print_function
+from cmath import inf
 import sys
 import numpy as np
 import pandas as pd
@@ -61,7 +62,7 @@ class FTGController(mpc_base_code.BaseController):
             (roll, pitch, phi) = euler_from_quaternion (orientation_list)
             #rospy.loginfo("{}, {}, {}".format(x, y, phi))
             self.state= np.array([x,y, phi])
-            #self.make_mpc_step(self.state)
+            self.make_mpc_step(self.state)
         except AttributeError:
             print("Initialisation not finished")
     
@@ -100,7 +101,7 @@ class FTGController(mpc_base_code.BaseController):
         # furthest_point_index=np.argmax(gap_array)+start_i
         # return  furthest_point_index
 
-    def lidar_to_xy(self, ranges, index):
+    def lidar_to_xy(self, index):
         if self.laser_data is None:
             print("no laser data provided")
         else:
@@ -137,11 +138,11 @@ class FTGController(mpc_base_code.BaseController):
         #calculate x and y value, given the index of the lidar point
 
         
-        self.t_x, self.t_y=self.lidar_to_xy(self.proc_ranges, best_point_index)
+        self.t_x, self.t_y=self.lidar_to_xy(best_point_index)
         gap_x_array=[]
         gap_y_array=[]
         for i in range(start_index, end_index):
-            temp_x, temp_y=self.lidar_to_xy(self.proc_ranges, i)
+            temp_x, temp_y=self.lidar_to_xy(i)
             gap_x_array.append(temp_x)
             gap_y_array.append(temp_y)
         gap_line=visualiser.GapMarker(gap_x_array, gap_y_array, 1)
