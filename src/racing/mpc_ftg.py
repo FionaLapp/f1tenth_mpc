@@ -75,7 +75,7 @@ class FTGController(mpc_base_code.BaseController):
         kernel_size = 4
         kernel = np.ones(kernel_size) / kernel_size
         ranges_convolved = np.convolve(ranges, kernel, mode='same') #averaging over every 4 elements
-        max_range=7
+        max_range=3
         proc_ranges = np.where(ranges_convolved<=max_range, ranges_convolved, max_range) #set everything larger than 3 to 3
         return proc_ranges
 
@@ -117,6 +117,7 @@ class FTGController(mpc_base_code.BaseController):
     def lidar_callback(self, data:LaserScan):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
         """
+        print("current heading angle:{}".format(self.state[2]))
         self.laser_data=data
         ranges = data.ranges
 
