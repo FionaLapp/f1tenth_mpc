@@ -30,6 +30,7 @@ class FTGController(mpc_base_code.BaseController):
     """ 
     """
     def __init__(self):
+        self.setup_finished=False
         self.t_x=1
         self.t_y=1
         self.state=[0,0,0]
@@ -54,7 +55,7 @@ class FTGController(mpc_base_code.BaseController):
         """
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         """
-        try:#update current state
+        if self.setup_finished:#update current state
             self.previous_x=self.state[0]
             self.previous_y=self.state[1]
             x=data.pose.pose.position.x
@@ -64,7 +65,7 @@ class FTGController(mpc_base_code.BaseController):
             #rospy.loginfo("{}, {}, {}".format(x, y, phi))
             self.state= np.array([x,y, phi])
             self.make_mpc_step(self.state)
-        except AttributeError:
+        else:
             print("Initialisation not finished")
     
     
@@ -130,7 +131,7 @@ class FTGController(mpc_base_code.BaseController):
         closest_point_index=np.argmin(self.proc_ranges)
 
         #Eliminate all points inside 'bubble' (set them to zero) 
-        bubble_radius=3
+        bubble_radius=2
         self.proc_ranges[closest_point_index-bubble_radius:closest_point_index+bubble_radius]=0
  
         #Find max length gap 
@@ -149,6 +150,7 @@ class FTGController(mpc_base_code.BaseController):
             temp_x, temp_y=self.lidar_to_xy(i)
             gap_x_array.append(temp_x)
             gap_y_array.append(temp_y)
+        print(gap_x_array)
         gap_line=visualiser.GapMarker(gap_x_array, gap_y_array, 1)
         # start_x, start_y=self.lidar_to_xy(self.proc_ranges, start_index)
         # end_x, end_y=self.lidar_to_xy(self.proc_ranges, end_index)
@@ -167,11 +169,11 @@ class FTGController(mpc_base_code.BaseController):
         gap_point.draw_point()
 
     def prepare_goal_template(self, t_now):
-        # try:
-        #     self.process_lidar_data()
-        # except AttributeError : #lidar data none
-        #     print("error")
-        self.process_lidar_data()
+        if self.setup_finished:
+            self.process_lidar_data()
+        else: #lidar data none
+            print("no lidar data yet")
+        # self.process_lidar_data()
         template = self.controller.get_tvp_template()
 
         for k in range(self.n_horizon + 1):

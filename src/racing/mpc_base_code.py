@@ -35,9 +35,11 @@ class BaseController(ABC):
     """ 
     """
     def __init__(self):
+        self.setup_finished=False
         self.params=self.get_params()
         self.setup_node()
         self.setup_mpc()
+        self.setup_finished=True
         
        
 
@@ -91,6 +93,10 @@ class BaseController(ABC):
         return params    
 
     def make_mpc_step(self, x_state):
+        if not self.setup_finished or not self.controller.flags['setup']:
+            print("setup not finished, can't make step")
+            return
+
         #making the mpc calculation
         u =self.controller.make_step(x_state) 
 
@@ -181,7 +187,7 @@ class BaseController(ABC):
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
-        self.controller.bounds['upper','_u','v'] = 0.1#self.params['max_speed']
+        self.controller.bounds['upper','_u','v'] = 0.5#self.params['max_speed']
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
