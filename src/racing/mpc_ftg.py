@@ -103,10 +103,10 @@ class FTGController(mpc_base_code.BaseController):
         Return index of best point in ranges
 	Naive: Choose the furthest point within ranges and go there
         """
-        gap_array=range
+        #gap_array=ranges
         return int((end_i-start_i)/2+start_i)
-        # furthest_point_index=np.argmax(gap_array)+start_i
-        # return  furthest_point_index
+        #furthest_point_index=np.argmax(gap_array)+start_i
+        #return  furthest_point_index
 
     def lidar_to_xy(self, index):
         if self.lidar_data is None:
@@ -133,12 +133,17 @@ class FTGController(mpc_base_code.BaseController):
         
         #Find closest point to LiDAR
         closest_point_index=np.argmin(self.proc_ranges)
+        c_x, c_y=self.lidar_to_xy(closest_point_index)
+        gap_point=visualiser.TargetMarker(c_x, c_y, 1)
+        gap_point.draw_point()
 
         #Eliminate all points inside 'bubble' (set them to zero) 
         self.proc_ranges[closest_point_index-self.bubble_radius:closest_point_index+self.bubble_radius]=0
  
         #Find max length gap 
         start_index, end_index=self.find_max_gap(self.proc_ranges)
+        start_index=start_index+50
+        end_index=end_index-50
 
         #Find the best point in the gap 
         best_point_index=self.find_best_point_index(start_index, end_index, self.proc_ranges)
@@ -160,15 +165,7 @@ class FTGController(mpc_base_code.BaseController):
         #print("x:{}, y:{}".format(self.t_x, self.t_y))
         #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
         gap_line.draw_point()
-        gap_point=visualiser.TargetMarker(self.t_x, self.t_y, 1)
-        laser_angle = (best_point_index * self.lidar_data.angle_increment) + self.lidar_data.angle_min 
-        heading_angle=self.state[2]
-        point_angle = laser_angle + heading_angle
-        #print("current lidarpoint angle:{}".format((point_angle)))
         
-        #print("x:{}, y:{}".format(self.t_x, self.t_y))
-        #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
-        gap_point.draw_point()
 
     def prepare_goal_template(self, t_now):
         if self.setup_finished:
