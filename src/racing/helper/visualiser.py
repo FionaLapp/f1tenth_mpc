@@ -35,13 +35,10 @@ class VisMarker(ABC):
 
     
     def set_position(self, x, y):
-        
+        # Position should be passed by the caller
+        self.marker.pose.orientation.w = 1.0
         try:
            
-            # Position should be passed by the caller
-            self.marker.pose.orientation.w = 1.0
-
-            
             #self.marker.pose.position.x=x[0][0]
             #self.marker.pose.position.y=y[0][0]
             for i in range(len(x)):
@@ -50,9 +47,7 @@ class VisMarker(ABC):
                 p.x, p.y, p.z = x[i],y[i], 0
                 self.marker.points.append(p)
         except:
-         # Position should be passed by the caller
-            self.marker.pose.orientation.w = 1.0
-
+         
             p= Point()
             p.x, p.y, p.z = x,y, 0
             self.marker.points.append(p)
@@ -95,6 +90,7 @@ class GapMarker(VisMarker):
         super().__init__( x, y, duration)
         self.marker.type = self.marker.LINE_STRIP
         self.marker.scale.y=0.1
+        self.marker.header.frame_id = 'map'
         #self.marker.header.frame_id = 'base_link'
         # x=[0,1,2]
         # self.set_position(x,x)

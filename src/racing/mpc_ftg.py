@@ -30,12 +30,13 @@ class FTGController(mpc_base_code.BaseController):
     """ 
     """
     def __init__(self):
-        self.t_x=0
-        self.t_y=0
+        self.t_x=1
+        self.t_y=1
         self.state=[0,0,0]
-        self.laser_data=None
-        super().__init__()
+        self.lidar_data=None
         self.setup_laser_scan()
+        
+        super().__init__()
         
         
 
@@ -102,14 +103,15 @@ class FTGController(mpc_base_code.BaseController):
         # return  furthest_point_index
 
     def lidar_to_xy(self, index):
-        if self.laser_data is None:
+        if self.lidar_data is None:
             print("no laser data provided")
         else:
-            laser_angle = (index * self.laser_data.angle_increment) + self.laser_data.angle_min
+            laser_angle = (index * self.lidar_data.angle_increment) + self.lidar_data.angle_min 
             heading_angle=self.state[2]
-            rotated_angle = laser_angle + heading_angle
-            p_x = self.proc_ranges[index] * np.cos(rotated_angle) + self.state[0]
-            p_y = self.proc_ranges[index]  * np.sin(rotated_angle) + self.state[1]
+            point_angle = laser_angle + heading_angle
+            #let's say 0° is right in front  of the car, that means   point_angle is 180, I'm pretty sure
+            p_x = self.proc_ranges[index] * np.cos(point_angle) + self.state[0] 
+            p_y =self.proc_ranges[index]  * np.sin(point_angle) + self.state[1]
             return p_x, p_y
         
 
@@ -117,12 +119,13 @@ class FTGController(mpc_base_code.BaseController):
     def lidar_callback(self, data:LaserScan):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
         """
-        print("current heading angle:{}".format(self.state[2]))
-        self.laser_data=data
-        ranges = data.ranges
+        
+        self.lidar_data=data
 
-        self.proc_ranges = self.preprocess_lidar(ranges)
-
+    def process_lidar_data(self):
+        
+        self.proc_ranges = self.preprocess_lidar(self.lidar_data.ranges)
+        
         #Find closest point to LiDAR
         closest_point_index=np.argmin(self.proc_ranges)
 
@@ -154,12 +157,21 @@ class FTGController(mpc_base_code.BaseController):
         #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
         gap_line.draw_point()
         gap_point=visualiser.TargetMarker(self.t_x, self.t_y, 1)
+        laser_angle = (best_point_index * self.lidar_data.angle_increment) + self.lidar_data.angle_min 
+        heading_angle=self.state[2]
+        point_angle = laser_angle + heading_angle
+        #print("current lidarpoint angle:{}".format((point_angle)))
+        
         #print("x:{}, y:{}".format(self.t_x, self.t_y))
         #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
         gap_point.draw_point()
 
     def prepare_goal_template(self, t_now):
-        
+        # try:
+        #     self.process_lidar_data()
+        # except AttributeError : #lidar data none
+        #     print("error")
+        self.process_lidar_data()
         template = self.controller.get_tvp_template()
 
         for k in range(self.n_horizon + 1):

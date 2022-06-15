@@ -45,10 +45,11 @@
 					x: 0.0,
 					y: 0.0,
 					z: 0.877,
-					w:  -0.480}
+					w: -0.480,  }
 			}
 		}
 	}'" />
+  <!--0.877,, -0.480-->
 	
   <node pkg="f1tenth_mpc" name="mpc" type="mpc_ftg.py" output="screen">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
