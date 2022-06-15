@@ -29,13 +29,19 @@ import helper.visualiser as visualiser
 class FTGController(mpc_base_code.BaseController):
     """ 
     """
-    def __init__(self):
+    def __init__(self, max_range=2, bubble_radius=10, threshold=2):
         self.setup_finished=False
-        self.t_x=1
-        self.t_y=1
-        self.state=[0,0,0]
-        self.lidar_data=None
         self.setup_laser_scan()
+        self.t_x=0
+        self.t_y=0
+        self.state=[0,0,0]
+        if max_range<threshold:
+            raise Exception("max range needs to be greater or equal threshold")
+        self.max_range=max_range
+        self.bubble_radius=bubble_radius
+        self.threshold=threshold
+        
+        
         
         super().__init__()
         
@@ -77,14 +83,13 @@ class FTGController(mpc_base_code.BaseController):
         kernel_size = 4
         kernel = np.ones(kernel_size) / kernel_size
         ranges_convolved = np.convolve(ranges, kernel, mode='same') #averaging over every 4 elements
-        max_range=3
-        proc_ranges = np.where(ranges_convolved<=max_range, ranges_convolved, max_range) #set everything larger than 3 to 3
+        proc_ranges = np.where(ranges_convolved<=self.max_range, ranges_convolved, self.max_range) #set everything larger than 3 to 3
         return proc_ranges
 
     def find_max_gap(self, ranges):
         """ Return the start index & end index of the max gap in free_space_ranges
         """
-        gap_index_array=np.argwhere(ranges<3) #indices of all elements that aren't gaps
+        gap_index_array=np.argwhere(ranges<self.threshold) #indices of all elements that aren't gaps
         gap_index_array=gap_index_array.flatten()
         gap_size=gap_index_array[1:]-gap_index_array[:-1] #find the difference between consecutive gap-indices (if thiis is 1, they are adjacent, if it is 2, there is a gap of size 1, etc.)
         
@@ -124,15 +129,13 @@ class FTGController(mpc_base_code.BaseController):
         self.lidar_data=data
 
     def process_lidar_data(self):
-        
         self.proc_ranges = self.preprocess_lidar(self.lidar_data.ranges)
         
         #Find closest point to LiDAR
         closest_point_index=np.argmin(self.proc_ranges)
 
         #Eliminate all points inside 'bubble' (set them to zero) 
-        bubble_radius=2
-        self.proc_ranges[closest_point_index-bubble_radius:closest_point_index+bubble_radius]=0
+        self.proc_ranges[closest_point_index-self.bubble_radius:closest_point_index+self.bubble_radius]=0
  
         #Find max length gap 
         start_index, end_index=self.find_max_gap(self.proc_ranges)
@@ -150,7 +153,6 @@ class FTGController(mpc_base_code.BaseController):
             temp_x, temp_y=self.lidar_to_xy(i)
             gap_x_array.append(temp_x)
             gap_y_array.append(temp_y)
-        print(gap_x_array)
         gap_line=visualiser.GapMarker(gap_x_array, gap_y_array, 1)
         # start_x, start_y=self.lidar_to_xy(self.proc_ranges, start_index)
         # end_x, end_y=self.lidar_to_xy(self.proc_ranges, end_index)
