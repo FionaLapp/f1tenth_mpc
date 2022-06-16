@@ -40,6 +40,11 @@ class FTGController(mpc_base_code.BaseController):
         self.max_range=max_range
         self.bubble_radius=bubble_radius
         self.threshold=threshold
+        self.cutoff_per_side=300
+        self.angle_increment=0.005823155865073204
+        self.raw_scan_angle_min=-3.1415927410125732
+        self.angle_min=self.raw_scan_angle_min+(self.angle_increment*self.cutoff_per_side)
+
         
         
         
@@ -80,6 +85,7 @@ class FTGController(mpc_base_code.BaseController):
             1.Setting each value to the mean over some window
             2.Rejecting high values (eg. > 3m)
         """
+        ranges=ranges[300:len(ranges)-300]
         kernel_size = 4
         kernel = np.ones(kernel_size) / kernel_size
         ranges_convolved = np.convolve(ranges, kernel, mode='same') #averaging over every 4 elements
@@ -112,7 +118,8 @@ class FTGController(mpc_base_code.BaseController):
         if self.lidar_data is None:
             print("no laser data provided")
         else:
-            laser_angle = (index * self.lidar_data.angle_increment) + self.lidar_data.angle_min 
+            print(self.lidar_data.angle_min)
+            laser_angle = (index * self.angle_increment) + self.angle_min 
             heading_angle=self.state[2]
             point_angle = laser_angle + heading_angle
             #let's say 0° is right in front  of the car, that means   point_angle is 180, I'm pretty sure
