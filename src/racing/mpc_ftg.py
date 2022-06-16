@@ -40,14 +40,10 @@ class FTGController(mpc_base_code.BaseController):
         self.max_range=max_range
         self.bubble_radius=bubble_radius
         self.threshold=threshold
-        self.cutoff_per_side=300
-        self.angle_increment=0.005823155865073204
-        self.raw_scan_angle_min=-3.1415927410125732
+        self.cutoff_per_side=150 #so the target point isn't right behind the car
+        self.angle_increment=0.005823155865073204 #can I get this from some param file? probably. would that be cleaner? certainly. Will I bother? Doesn't look likely
+        self.raw_scan_angle_min=-3.1415927410125732 #could just say -np.pi, but where'd be the fun in that?
         self.angle_min=self.raw_scan_angle_min+(self.angle_increment*self.cutoff_per_side)
-
-        
-        
-        
         super().__init__()
         
         
@@ -55,13 +51,7 @@ class FTGController(mpc_base_code.BaseController):
     def  setup_laser_scan(self) :
         laser_topic= '/scan'
         laser_sub=rospy.Subscriber(laser_topic, LaserScan, self.lidar_callback)
-        #super().setup_node()
-
         
-       
-
-    
-
     def localisation_callback(self, data:Odometry):
         """
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
@@ -85,11 +75,11 @@ class FTGController(mpc_base_code.BaseController):
             1.Setting each value to the mean over some window
             2.Rejecting high values (eg. > 3m)
         """
-        ranges=ranges[300:len(ranges)-300]
+        ranges=ranges[self.cutoff_per_side:len(ranges)-self.cutoff_per_side]
         kernel_size = 4
         kernel = np.ones(kernel_size) / kernel_size
         ranges_convolved = np.convolve(ranges, kernel, mode='same') #averaging over every 4 elements
-        proc_ranges = np.where(ranges_convolved<=self.max_range, ranges_convolved, self.max_range) #set everything larger than 3 to 3
+        proc_ranges = np.where(ranges_convolved<=self.max_range, ranges_convolved, self.max_range) #set everything larger than max_range to max_range
         return proc_ranges
 
     def find_max_gap(self, ranges):
@@ -110,19 +100,19 @@ class FTGController(mpc_base_code.BaseController):
 	Naive: Choose the furthest point within ranges and go there
         """
         #gap_array=ranges
+        if len(ranges)< 10:#TODO fix this so it's looking at a distance rather than an angle
+            print("gap  not wide enough")
         return int((end_i-start_i)/2+start_i)
         #furthest_point_index=np.argmax(gap_array)+start_i
         #return  furthest_point_index
 
     def lidar_to_xy(self, index):
         if self.lidar_data is None:
-            print("no laser data provided")
+            raise Warning("no laser data provided")
         else:
-            print(self.lidar_data.angle_min)
             laser_angle = (index * self.angle_increment) + self.angle_min 
             heading_angle=self.state[2]
             point_angle = laser_angle + heading_angle
-            #let's say 0° is right in front  of the car, that means   point_angle is 180, I'm pretty sure
             p_x = self.proc_ranges[index] * np.cos(point_angle) + self.state[0] 
             p_y =self.proc_ranges[index]  * np.sin(point_angle) + self.state[1]
             return p_x, p_y
@@ -138,26 +128,21 @@ class FTGController(mpc_base_code.BaseController):
     def process_lidar_data(self):
         self.proc_ranges = self.preprocess_lidar(self.lidar_data.ranges)
         
-        #Find closest point to LiDAR
-        closest_point_index=np.argmin(self.proc_ranges)
-        c_x, c_y=self.lidar_to_xy(closest_point_index)
-        gap_point=visualiser.TargetMarker(c_x, c_y, 1)
-        gap_point.draw_point()
+        #Find closest point to LiDAR #TODO this needs work
+        closest_point_index=np.argmin(self.proc_ranges) 
+        
 
-        #Eliminate all points inside 'bubble' (set them to zero) 
+        #Eliminate all points inside 'bubble' (set them to zero) #TODO this needs work
         self.proc_ranges[closest_point_index-self.bubble_radius:closest_point_index+self.bubble_radius]=0
  
         #Find max length gap 
         start_index, end_index=self.find_max_gap(self.proc_ranges)
-        start_index=start_index+50
-        end_index=end_index-50
+        
 
         #Find the best point in the gap 
         best_point_index=self.find_best_point_index(start_index, end_index, self.proc_ranges)
         
         #calculate x and y value, given the index of the lidar point
-
-        
         self.t_x, self.t_y=self.lidar_to_xy(best_point_index)
         gap_x_array=[]
         gap_y_array=[]
@@ -166,20 +151,18 @@ class FTGController(mpc_base_code.BaseController):
             gap_x_array.append(temp_x)
             gap_y_array.append(temp_y)
         gap_line=visualiser.GapMarker(gap_x_array, gap_y_array, 1)
-        # start_x, start_y=self.lidar_to_xy(self.proc_ranges, start_index)
-        # end_x, end_y=self.lidar_to_xy(self.proc_ranges, end_index)
-        # gap_line=visualiser.GapMarker([start_x, end_x], [start_y, end_y], 1)
-        #print("x:{}, y:{}".format(self.t_x, self.t_y))
-        #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
         gap_line.draw_point()
+        #a_x, a_y= self.lidar_to_xy(0)
+        #gap_point=visualiser.TargetMarker(a_x, a_y, 1)
+        gap_point=visualiser.TargetMarker(self.t_x, self.t_y, 1)
+        gap_point.draw_point()
         
 
     def prepare_goal_template(self, t_now):
         if self.setup_finished:
             self.process_lidar_data()
-        else: #lidar data none
-            print("no lidar data yet")
-        # self.process_lidar_data()
+        else: #lidar data is None
+            print("setup not finished yet")
         template = self.controller.get_tvp_template()
 
         for k in range(self.n_horizon + 1):
