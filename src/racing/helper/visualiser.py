@@ -19,7 +19,7 @@ class VisMarker(ABC):
         # Scale for points is uniform within each direction for points, or handles line width for line-type markers
         self.marker.scale.x = 0.5
         self.marker.scale.y=0.5
-        
+        self.marker.scale.z = 0.5
      
         # When should the marker disappear
         self.marker.lifetime = Duration(duration)
@@ -47,10 +47,9 @@ class VisMarker(ABC):
                 p.x, p.y, p.z = x[i],y[i], 0
                 self.marker.points.append(p)
         except:
-         
+            
             p= Point()
             p.x, p.y, p.z = x,y, 0
-            self.marker.points.append(p)
             self.marker.pose.position.x=x
             self.marker.pose.position.y=y
             # for i in range(len(x)):
@@ -90,7 +89,6 @@ class GapMarker(VisMarker):
         super().__init__( x, y, duration)
         self.marker.type = self.marker.LINE_STRIP
         self.marker.scale.y=0.1
-        self.marker.header.frame_id = 'map'
         #self.marker.header.frame_id = 'base_link'
         # x=[0,1,2]
         # self.set_position(x,x)
