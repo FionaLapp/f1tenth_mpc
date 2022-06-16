@@ -29,7 +29,7 @@ import helper.visualiser as visualiser
 class FTGController(mpc_base_code.BaseController):
     """ 
     """
-    def __init__(self, max_range=2, bubble_radius=10, threshold=2):
+    def __init__(self, max_speed=None, max_range=2, bubble_radius=10, threshold=2):
         self.setup_finished=False
         self.setup_laser_scan()
         self.t_x=0
@@ -44,7 +44,7 @@ class FTGController(mpc_base_code.BaseController):
         self.angle_increment=0.005823155865073204 #can I get this from some param file? probably. would that be cleaner? certainly. Will I bother? Doesn't look likely
         self.raw_scan_angle_min=-3.1415927410125732 #could just say -np.pi, but where'd be the fun in that?
         self.angle_min=self.raw_scan_angle_min+(self.angle_increment*self.cutoff_per_side)
-        super().__init__()
+        super().__init__(max_speed=max_speed)
         
         
 
@@ -178,7 +178,7 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =FTGController()
+    model_predictive_control =FTGController(max_speed=2)
     rospy.sleep(0.1)
     rospy.spin()
 

@@ -34,11 +34,13 @@ import helper.visualiser as visualiser
 class BaseController(ABC):
     """ 
     """
-    def __init__(self):
+    def __init__(self, max_speed=None):
         self.setup_finished=False
         self.params=self.get_params()
         self.setup_node()
-        self.setup_mpc()
+        if max_speed is None:
+            max_speed=self.params['max_speed']
+        self.setup_mpc(max_speed=max_speed)
         self.setup_finished=True
         
        
@@ -134,7 +136,7 @@ class BaseController(ABC):
         self.path_length=1#
         
 
-    def setup_mpc(self, n_horizon=5):
+    def setup_mpc(self, max_speed, n_horizon=5):
         rospy.loginfo("setting up MPC")
         model_type = 'continuous' # either 'discrete' or 'continuous'
         self.model = Model(model_type)
@@ -187,7 +189,7 @@ class BaseController(ABC):
         self.controller.bounds['upper','_u','delta'] = self.params['max_steering_angle']
 
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
-        self.controller.bounds['upper','_u','v'] = 0.5#self.params['max_speed']
+        self.controller.bounds['upper','_u','v'] = max_speed
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
