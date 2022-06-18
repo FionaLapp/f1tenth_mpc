@@ -108,7 +108,7 @@ class FTGController(mpc_base_code.BaseController):
 	Naive: Choose the furthest point within ranges and go there
         """
         #gap_array=ranges
-        if len(ranges)< self.min_gap_width:#TODO fix this so it's looking at a distance rather than an angle
+        if len(ranges)< self.min_gap_width: # this is the minimum of range points needed if the obstacle is at max_range distance. For closer obstacles, more points will be needed
             rospy.loginfo("largest gap is not wide enough")
         return int((end_i-start_i)/2+start_i)
         #furthest_point_index=np.argmax(gap_array)+start_i
@@ -130,7 +130,7 @@ class FTGController(mpc_base_code.BaseController):
     def lidar_callback(self, data:LaserScan):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
         """
-        #TODO  error handling for empty ranges
+
         self.lidar_data=data
 
     def process_lidar_data(self):
