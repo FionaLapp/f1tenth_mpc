@@ -92,6 +92,8 @@ class BaseController(ABC):
         #custom stuff
         params['directory']=rospy.get_param(namespace+'directory')
         params['ftg_safety_raduis']=rospy.get_param(namespace+'ftg_safety_raduis')
+        params['center_to_wall_distance']=rospy.get_param(namespace+'center_to_wall_distance')
+        
         return params    
 
     def make_mpc_step(self, x_state):

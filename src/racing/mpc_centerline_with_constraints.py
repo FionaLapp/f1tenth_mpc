@@ -26,12 +26,18 @@ import helper.visualiser as visualiser
 class ReadCSVController(mpc_base_code.BaseController):
     """ 
     """
-    def __init__(self):
+    def __init__(self, max_speed=None):
+        
+        self.setup_finished=False
+        self.params=super().get_params()
         self.read_desired_path()
-        super().__init__()
+        super().setup_node()
+        if max_speed is None:
+            max_speed=self.params['max_speed']
+        super().setup_mpc(max_speed=max_speed)
+        self.setup_finished=True
         
-        
-        
+           
        
 
 
@@ -46,7 +52,7 @@ class ReadCSVController(mpc_base_code.BaseController):
         self.previous_y=0
         self.distance_travelled=0.0
         self.index=0
-        self.trackwidth=1.1
+        self.trackwidth=self.params['center_to_wall_distance']-0.1 # thee 0.1 is a random number I decided on for safety
         self.calculate_wall_points()
 
     def  calculate_wall_points(self):
@@ -54,12 +60,9 @@ class ReadCSVController(mpc_base_code.BaseController):
         coordinates and either sign (so the dot prodict is 0), divide by length to get unit vector, multiply 
         by half the track width. add that vector to the original centerline point.
         """
-        
-        
         self.path_tangent_x= self.path_data_x-np.roll(self.path_data_x, 1)
         self.path_tangent_y= self.path_data_y-np.roll(self.path_data_y, 1)
         l=np.sqrt(self.path_tangent_x**2+self.path_tangent_y**2)
-        
         self.path_data_x_r=self.path_data_x+self.path_tangent_y*self.trackwidth/l
         self.path_data_y_r=self.path_data_y-self.path_tangent_x*self.trackwidth/l
         self.path_data_x_l=self.path_data_x-self.path_tangent_y*self.trackwidth/l
@@ -81,18 +84,20 @@ class ReadCSVController(mpc_base_code.BaseController):
             #rospy.loginfo("{}, {}, {}".format(x, y, phi))
             self.state= np.array([x,y, phi])
             
-            #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
+            #update target: find the point on the centerline fiile closest to the current position, then go two further
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
-            
-            self.index=distances_to_current_point.argmin()+2 %1170
-            #rospy.loginfo(self.index)
+            self.index=distances_to_current_point.argmin()+2 %len(self.path_data_x)
             self.make_mpc_step(self.state)
-            m=visualiser.GapMarker(self.path_data_x_l, self.path_data_y_l, 10)
+            m=visualiser.GapMarker(self.path_data_x_l[self.index-1:self.index+1], self.path_data_y_l[self.index-1:self.index+1], 1)
             m.draw_point()
         except AttributeError:
             print("Initialisation not finished")
 
-    
+    def make_mpc_step(self, x_state):
+        m=visualiser.GapMarker(self.path_data_x_l[self.index-1:(self.index+1)%len(self.path_data_x)], self.path_data_y_l[self.index-1:(self.index+1)%len(self.path_data_x)], 1)
+        m.draw_point()
+        #TODO add halfspace constraints
+        super().make_mpc_step(x_state)
         
   
 def main(args):
