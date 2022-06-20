@@ -27,7 +27,7 @@ from tf.transformations import euler_from_quaternion
 
 import mpc_base_code as mpc_base_code
 import helper.visualiser as visualiser
-class ReadCSVController(mpc_base_code.BaseController):
+class ControllerWithConstraints(mpc_base_code.BaseController):
     """ This controoller reads in the line data from the centerline file, 
     then callculates wall points for each centerline point using the track-with provided in the custom param file
     """
@@ -38,7 +38,9 @@ class ReadCSVController(mpc_base_code.BaseController):
         super().setup_node()
         if max_speed is None:
             max_speed=self.params['max_speed']
-        super().setup_mpc(max_speed=max_speed)
+        self.state=[0,0,0]
+        self.setup_mpc(max_speed=max_speed)
+        
         self.setup_finished=True
         
     def read_desired_path(self):
@@ -94,7 +96,7 @@ class ReadCSVController(mpc_base_code.BaseController):
 
 
     def setup_mpc(self, max_speed, n_horizon=5):
-        rospy.loginfo("setting up MPC")
+        rospy.loginfo("setting up MPC from child class")
         model_type = 'continuous' # either 'discrete' or 'continuous'
         self.model = Model(model_type)
 
@@ -155,10 +157,8 @@ class ReadCSVController(mpc_base_code.BaseController):
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
         self.controller.bounds['upper','_u','v'] = max_speed
         
-        self.controller.bounds['lower','_x','x'] = self.lower_x
-        self.controller.bounds['upper','_x','x'] = self.upper_x
-        self.controller.bounds['lower','_x','y'] = self.lower_y
-        self.controller.bounds['upper','_x','y'] = self.upper_y
+        #self.controller.bounds['lower','_x','y'] = self.lower_y
+        self.controller.set_nl_cons('upper', -self.upper_y, ub = 0)
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
@@ -178,30 +178,41 @@ class ReadCSVController(mpc_base_code.BaseController):
         
         rospy.loginfo("MPC set up finished")  
 
-def prepare_goal_template(self, t_now):
+    def prepare_goal_template(self, t_now):
         template = self.controller.get_tvp_template()
-
+        
         for k in range(self.n_horizon + 1):
-            template["_tvp", k, "target_x"]=self.path_data[' x_m'][(self.index)%self.path_length]
-            template["_tvp", k, "target_y"] =self.path_data[' y_m'][(self.index)%self.path_length]
+            i=(self.index)%self.path_length
+            template["_tvp", k, "target_x"]=self.path_data[' x_m'][i]
+            template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
+            #equation of line
+            #r=p+lambda*t (r: any point on line, p: knownn point on line, lambda: param, t: tangent to line)
+            #i.e.
+            #r_x=p_x+lambda*t_x
+            #r_y=p_y+lambda*t_y
+            #eliminate lambda
+            #lambda=(r_x-p_x)/t_x
+            #r_y=p_y+t_y*(r_x-p_x)/t_x
+            template["_tvp", k, "upper_y"] =(self.path_data_y_l[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.state[0]-self.path_data_x_l[i]))
+            #template["_tvp", k, "lower_y"] =self.lower_y[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.x-self.lower_x[i])
             
             #constraints x
-            if self.path_data_x_l[self.index]>self.path_data_x_r[self.index]:
-                template["_tvp", k, "upper_x"] =self.path_data_x_l[(self.index)%self.path_length]
-                template["_tvp", k, "lower_x"] =self.path_data_x_r[(self.index)%self.path_length]
-            else:
-                template["_tvp", k, "upper_x"] =self.path_data_x_r[(self.index)%self.path_length]
-                template["_tvp", k, "lower_x"] =self.path_data_x_l[(self.index)%self.path_length]
-            #constraints y
-            if self.path_data_y_l[self.index]>self.path_data_y_r[self.index]:
-                template["_tvp", k, "upper_x"] =self.path_data_y_l[(self.index)%self.path_length]
-                template["_tvp", k, "lower_x"] =self.path_data_y_r[(self.index)%self.path_length]
-            else:
-                template["_tvp", k, "upper_x"] =self.path_data_y_r[(self.index)%self.path_length]
-                template["_tvp", k, "lower_x"] =self.path_data_y_l[(self.index)%self.path_length]
+            # if self.path_data_x_l[self.index]>self.path_data_x_r[self.index]:
+            #     template["_tvp", k, "upper_x"] =self.path_data_x_l[(self.index)%self.path_length]
+            #     template["_tvp", k, "lower_x"] =self.path_data_x_r[(self.index)%self.path_length]
+            # else:
+            #     template["_tvp", k, "upper_x"] =self.path_data_x_r[(self.index)%self.path_length]
+            #     template["_tvp", k, "lower_x"] =self.path_data_x_l[(self.index)%self.path_length]
+            # #constraints y
+            # if self.path_data_y_l[self.index]>self.path_data_y_r[self.index]:
+            #     template["_tvp", k, "upper_y"] =self.path_data_y_l[(self.index)%self.path_length]
+            #     template["_tvp", k, "lower_y"] =self.path_data_y_r[(self.index)%self.path_length]
+            # else:
+            #     template["_tvp", k, "upper_y"] =self.path_data_y_r[(self.index)%self.path_length]
+            #     template["_tvp", k, "lower_y"] =self.path_data_y_l[(self.index)%self.path_length]
             
         vis_point=visualiser.TargetMarker(self.path_data_x[(self.index+self.n_horizon)%self.path_length], self.path_data_y[(self.index+self.n_horizon)%self.path_length], 1)
-        #TODO jjust about everything, I don't think this works yet
+        #TODO just about everything, I don't think this works yet
         m=visualiser.GapMarker(self.path_data_x_l[self.index-1:(self.index+1)%len(self.path_data_x)], self.path_data_y_l[self.index-1:(self.index+1)%len(self.path_data_x)], 1)
         m.draw_point()
 
@@ -215,7 +226,7 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =ReadCSVController()
+    model_predictive_control =ControllerWithConstraints()
     rospy.sleep(0.1)
     rospy.spin()
 
