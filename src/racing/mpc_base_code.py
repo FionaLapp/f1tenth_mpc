@@ -98,7 +98,7 @@ class BaseController(ABC):
 
     def make_mpc_step(self, x_state):
         if not self.setup_finished or not self.controller.flags['setup']:
-            print("setup not finished, can't make step")
+            rospy.logdebug("setup not finished, can't make step")
             return
 
         #making the mpc calculation
