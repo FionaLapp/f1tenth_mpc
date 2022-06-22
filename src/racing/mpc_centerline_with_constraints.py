@@ -7,6 +7,8 @@ from __future__ import print_function
 import sys
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib
 
 
 #MPC imports
@@ -19,6 +21,7 @@ import casadi
 # Import do_mpc package:
 from do_mpc.model import Model
 from do_mpc.controller import MPC
+from do_mpc.graphics import Graphics
 
 #ROS Imports
 import rospy
@@ -119,6 +122,12 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.lower_x=self.model.set_variable(var_type='_tvp', var_name='lower_x', shape=(1,1))
         self.lower_y=self.model.set_variable(var_type='_tvp', var_name='lower_y', shape=(1,1))
 
+        self.tvp_path_data_y_l=self.model.set_variable(var_type="_tvp", var_name="tvp_path_data_y_l", shape=(1,1))
+        self.tvp_path_data_x_l=self.model.set_variable(var_type="_tvp", var_name="tvp_path_data_x_l", shape=(1,1))
+        self.tvp_path_tangent_y=self.model.set_variable(var_type="_tvp", var_name="tvp_path_tangent_y", shape=(1,1))
+        self.tvp_path_tangent_x=self.model.set_variable(var_type="_tvp", var_name="tvp_path_tangent_x", shape=(1,1))
+        
+            
 
         #differential equations
 
@@ -158,8 +167,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.controller.bounds['upper','_u','v'] = max_speed
         
         #self.controller.bounds['lower','_x','y'] = self.lower_y
-        self.controller.set_nl_cons('upper', -self.upper_y, ub = 0)
-
+        
+        #self.controller.set_nl_cons('upper', -self.upper_y, ub = 0)
+        self.controller.set_nl_cons('upper', self.tvp_path_data_y_l+(self.tvp_path_tangent_y/self.tvp_path_tangent_x)*(self.state[0]-self.tvp_path_data_x_l), ub = 0)
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
         self.controller.set_rterm(delta=1)
@@ -193,7 +203,12 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             #eliminate lambda
             #lambda=(r_x-p_x)/t_x
             #r_y=p_y+t_y*(r_x-p_x)/t_x
-            template["_tvp", k, "upper_y"] =(self.path_data_y_l[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.state[0]-self.path_data_x_l[i]))
+            template["_tvp", k, "tvp_path_data_y_l"] =self.path_data_y_l[i]
+            template["_tvp", k, "tvp_path_data_x_l"] =self.path_data_x_l[i]
+            template["_tvp", k, "tvp_path_tangent_x"] =self.path_tangent_x[i]
+            template["_tvp", k, "tvp_path_tangent_y"] =self.path_tangent_y[i]
+            
+            #template["_tvp", k, "upper_y"] =(self.path_data_y_l[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.x-self.path_data_x_l[i]))
             #template["_tvp", k, "lower_y"] =self.lower_y[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.x-self.lower_x[i])
             
             #constraints x
@@ -220,6 +235,56 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         vis_point.draw_point()
         #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
         return template   
+    def plot_mpc(self):
+        self.configure_graphics()
+        self._plotter.plot_results()
+        self._plotter.reset_axes()
+        plt.show()
+
+        data_array=self.controller.data['_x']
+        x_data=data_array[:,0]
+        y_data=data_array[:,1]
+
+        fig = plt.figure(figsize=(10,5))
+        plt.plot(x_data, y_data)
+        plt.xlabel('x position')
+        plt.ylabel('y position')
+        title="vehicle path".format()
+        plt.title(title)
+        plt.show()
+        filepath=self.params['directory']+"/plots/"+title
+        fig.savefig(filepath, bbox_inches='tight', dpi=150)
+        
+    def configure_graphics(self):
+        """
+        Matplotlib-based plotter and connect relevant data points to it.
+        Additional styling is added for more pleasing visuals and can be extended for custom plotting.
+        this function was copied from https://github.com/TheCodeSummoner/f1tenth-racing-algorithms
+        """
+        self._plotter = Graphics(self.controller.data)
+
+        # Add some nice styling
+        matplotlib.rcParams["font.size"] = 18
+        matplotlib.rcParams["lines.linewidth"] = 3
+        matplotlib.rcParams["axes.grid"] = True
+
+        # Create the figure and the axis
+        figure, axis = plt.subplots(3, sharex="all", figsize=(16, 9))
+        figure.align_ylabels()
+
+        # Draw relevant state and inputs
+        self._plotter.add_line(var_type="_x", var_name="x", axis=axis[0], color="green")
+        self._plotter.add_line(var_type="_x", var_name="y", axis=axis[0], color="blue")
+        self._plotter.add_line(var_type="_x", var_name="phi", axis=axis[1], color="red")
+        self._plotter.add_line(var_type="_u", var_name="delta", axis=axis[1], color="green")
+        self._plotter.add_line(var_type="_u", var_name="v", axis=axis[2], color="red")
+
+        # Set X and Y labels
+        axis[0].set_ylabel("Position")
+        axis[1].set_ylabel("Angles")
+        axis[2].set_ylabel("Velocity")
+        axis[2].set_xlabel("Time")
+
   
 def main(args):
     
@@ -227,6 +292,7 @@ def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
     model_predictive_control =ControllerWithConstraints()
+    rospy.on_shutdown(model_predictive_control.plot_mpc())
     rospy.sleep(0.1)
     rospy.spin()
 
