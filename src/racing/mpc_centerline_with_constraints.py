@@ -120,7 +120,10 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         ##constraint params
         ##
         #self.upper_x=self.model.set_variable(var_type='_tvp', var_name='upper_x', shape=(1,1))
-        self.upper_y=self.model.set_variable(var_type='_tvp', var_name='upper_y', shape=(1,1))
+        self.constraint_m=self.model.set_variable(var_type='_tvp', var_name='constraint_m', shape=(1,1))
+        self.constraint_n_lower=self.model.set_variable(var_type='_tvp', var_name='constraint_n_lower', shape=(1,1))
+        self.constraint_n_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_n_upper', shape=(1,1))
+        
         #self.lower_x=self.model.set_variable(var_type='_tvp', var_name='lower_x', shape=(1,1))
         #self.lower_y=self.model.set_variable(var_type='_tvp', var_name='lower_y', shape=(1,1))
 
@@ -174,7 +177,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         
         
         
-        #self.controller.set_nl_cons('upper', self.model.tvp['upper_y'], ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        self.controller.set_nl_cons('upper', -(self.y-self.constraint_m*self.x+self.constraint_n_upper), ub=0, soft_constraint=True, penalty_term_cons=1e4)
         #self.controller.set_nl_cons('upper', -self.upper_y, ub = 0)
         #self.controller.set_nl_cons('upper', self.tvp_path_data_y_l+(self.tvp_path_tangent_y/self.tvp_path_tangent_x)*(self.state[0]-self.tvp_path_data_x_l), ub = 0)
         
@@ -222,19 +225,24 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             i=(self.index)%self.path_length
             template["_tvp", k, "target_x"]=self.path_data[' x_m'][i]
             template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
-            
-            #equation of line
+            #vector equation of line
             #r=p+lambda*t (r: any point on line, p: knownn point on line, lambda: param, t: tangent to line)
             #i.e.
             #r_x=p_x+lambda*t_x
             #r_y=p_y+lambda*t_y
             #eliminate lambda from system
             #lambda=(r_x-p_x)/t_x
-            #r_y=p_y+t_y*(r_x-p_x)/t_x  
-            template["_tvp", k, "upper_y"] =(self.path_data_y_l[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.x-self.path_data_x_l[i]))
-            
-            # #now for points that need to lie below the line, every x value p_x of the projected trajectory needs to have a lower y value --> ry-y>0
+            #0=r_y-p_y+t_y*(r_x-p_x)/t_x
+            # let r_y= self.y, r_x=self.x then the car hits the border
+            #hence thee constraint line is 0=y-mx+n
+            #where m=p_y-(t_y/t_x))*p_x, n=t_y/t_x
 
+            #to be below the line: inequality (but I'm confused about direction because of left/right, upper/lower)
+            #template["_tvp", k, "upper_y"] =(self.path_data_y_l[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.x-self.path_data_x_l[i]))
+            # #now for points that need to lie below the line, every x value p_x of the projected trajectory needs to have a lower y value --> ry-y>0
+            template["_tvp", k, "constraint_m"] =(self.path_data_y_l[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_l[i])
+            template["_tvp", k, "constraint_n_upper"] =(self.path_tangent_y[i]/self.path_tangent_x[i])
+            
             #other ideas I had but couldn't quite figure out how to get them to work
             #the normal from trajectory point r to the line needs to point the same way as the one used to calculate the line
             #something with the crossproduct/ sign of a determiinant?
@@ -245,8 +253,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             # template["_tvp", k, "tvp_path_data_x_l"] =self.path_data_x_l[i]
             # template["_tvp", k, "tvp_path_tangent_x"] =self.path_tangent_x[i]
             # template["_tvp", k, "tvp_path_tangent_y"] =self.path_tangent_y[i]
-           
-
+        ##print(template["_tvp", :, "upper_y"])
 
         vis_point=visualiser.TargetMarker(self.path_data_x[(self.index+self.n_horizon)%self.path_length], self.path_data_y[(self.index+self.n_horizon)%self.path_length], 1)
         vis_point.draw_point()
