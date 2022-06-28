@@ -174,7 +174,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         
         
         
-        self.controller.set_nl_cons('upper', self.model.tvp['upper_y'], ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        #self.controller.set_nl_cons('upper', self.model.tvp['upper_y'], ub=0, soft_constraint=True, penalty_term_cons=1e4)
         #self.controller.set_nl_cons('upper', -self.upper_y, ub = 0)
         #self.controller.set_nl_cons('upper', self.tvp_path_data_y_l+(self.tvp_path_tangent_y/self.tvp_path_tangent_x)*(self.state[0]-self.tvp_path_data_x_l), ub = 0)
         
@@ -319,8 +319,8 @@ def main(args):
     rospy.loginfo("starting up mpc node")
     
     model_predictive_control =ControllerWithConstraints(max_speed=2)
-    rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
-    #rospy.on_shutdown(model_predictive_control.plot_mpc())
+    #uncomment beloow to create mpc graph
+    #rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
     rospy.sleep(0.1)
     rospy.spin()
     
