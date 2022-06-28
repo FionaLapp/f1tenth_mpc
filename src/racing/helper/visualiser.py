@@ -100,6 +100,20 @@ class GapMarker(VisMarker):
         topic_name='/gap_vis'
         self.channel=Publisher(topic_name, Marker, queue_size=100)
 
+class ConstraintMarker(VisMarker):
+    def __init__(self, x:float, y:float, duration:float):
+        super().__init__(x, y, duration)
+        self.marker.type = self.marker.LINE_LIST
+
+        
+        #this seems to be a bit pointless because the colour is actually decided in the simulator.rviz file but if I leave it out it doesn't show up
+        self.marker.color.r = 255
+        self.marker.color.g = 0
+        self.marker.color.b = 255
+        self.marker.color.a = 1.0
+        topic_name='/constraint_vis'
+        self.channel=Publisher(topic_name, Marker, queue_size=100)
+
     # def set_position(self,x, y):
     #     # Position should be passed by the caller
     #     self.marker.pose.orientation.w = 1.0
