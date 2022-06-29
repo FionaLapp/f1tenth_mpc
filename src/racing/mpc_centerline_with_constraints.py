@@ -91,7 +91,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             
             #update target: find the point on the centerline fiile closest to the current position, then go two further
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
-            self.index=distances_to_current_point.argmin()+4 %len(self.path_data_x)
+            self.index=(distances_to_current_point.argmin()+4) %self.path_length
             self.make_mpc_step(self.state)
             # m=visualiser.GapMarker(self.path_data_x_l[self.index-1:self.index+1], self.path_data_y_l[self.index-1:self.index+1], 1)
             # m.draw_point()
@@ -175,8 +175,8 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
         self.controller.bounds['upper','_u','v'] = max_speed
         
-        self.upper=self.controller.set_nl_cons('upper', self.constraint_t_x*(self.y-self.constraint_p_y_upper)+self.constraint_t_y*(self.x-self.constraint_p_y_upper), ub=0, soft_constraint=True, penalty_term_cons=1e4)
-        #self.lower=self.controller.set_nl_cons('lower', -(self.constraint_t_x*(self.y-self.constraint_p_y_lower)+self.constraint_t_y*(self.x-self.constraint_p_y_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        self.upper=self.controller.set_nl_cons('upper', self.constraint_t_x*(self.y-self.constraint_p_y_upper)-self.constraint_t_y*(self.x-self.constraint_p_x_upper), ub=0,soft_constraint=True, penalty_term_cons=1e4)
+        self.lower=self.controller.set_nl_cons('lower', -(self.constraint_t_x*(self.y-self.constraint_p_y_lower)-self.constraint_t_y*(self.x-self.constraint_p_x_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
         
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
@@ -212,12 +212,12 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             #r_y=p_y+lambda*t_y
             #eliminate lambda from system
             #lambda=(r_x-p_x)/t_x
-            #0=r_y-p_y+t_y*(r_x-p_x)/t_x
+            #0=r_y-p_y-t_y*(r_x-p_x)/t_x
             # let r_y= self.y, r_x=self.x then the car hits the border
             #hence thee constraint line is 0=y-mx+n
             #where m=p_y-(t_y/t_x))*p_x, n=t_y/t_x
             #but of course this will inevitably cause problems once t_x=0, so we rearrange again:
-            #0=t_x*(r_y-p_y)+t_y*(r_x-p_x)
+            #0=t_x*(r_y-p_y)-t_y*(r_x-p_x)
             
             #in a very basic approach, I'm going to just assume the constraint lines are parallel. 
             #I'm then going to figure out which n (left or right) belongs to the upper and which to lower
@@ -226,7 +226,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             template["_tvp", k, "constraint_t_x"] = self.path_tangent_x[i]
             template["_tvp", k, "constraint_t_y"] = self.path_tangent_y[i]
             if self.path_tangent_x[i]==0:
-
+                print("x tangent=0")
 
                 if self.path_tangent_y[i]==0:
                     raise Exception("Tangent vector to wall is 0 vector")
@@ -246,7 +246,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
                 n_left=(self.path_data_y_l[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_l[i])
                 n_right=(self.path_data_y_r[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_r[i])
                 if n_left>n_right:
-                    #left=upper bound
+                    #print("n_left:{}, n_right:{}".format(n_left, n_right))
                     #print("left wall above car")
                     p_x_upper= self.path_data_x_l[i]
                     p_x_lower = self.path_data_x_r[i]
@@ -254,6 +254,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
                     p_y_lower = self.path_data_y_r[i]
                 elif n_left<n_right:
                     #print("right wall above car")
+                    #print("n_left:{}, n_right:{}".format(n_left, n_right))
                     p_x_upper= self.path_data_x_r[i]
                     p_x_lower= self.path_data_x_l[i]
                     p_y_upper= self.path_data_y_r[i]
