@@ -120,9 +120,13 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         ##constraint params
         ##
         #self.upper_x=self.model.set_variable(var_type='_tvp', var_name='upper_x', shape=(1,1))
-        self.constraint_m=self.model.set_variable(var_type='_tvp', var_name='constraint_m', shape=(1,1))
-        self.constraint_n_lower=self.model.set_variable(var_type='_tvp', var_name='constraint_n_lower', shape=(1,1))
-        self.constraint_n_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_n_upper', shape=(1,1))
+        self.constraint_t_x=self.model.set_variable(var_type='_tvp', var_name='constraint_t_x', shape=(1,1))
+        self.constraint_t_y=self.model.set_variable(var_type='_tvp', var_name='constraint_t_y', shape=(1,1))
+        
+        self.constraint_p_x_lower=self.model.set_variable(var_type='_tvp', var_name='constraint_p_x_lower', shape=(1,1))
+        self.constraint_p_x_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_p_x_upper', shape=(1,1))
+        self.constraint_p_y_lower=self.model.set_variable(var_type='_tvp', var_name='constraint_p_y_lower', shape=(1,1))
+        self.constraint_p_y_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_p_y_upper', shape=(1,1))
         
         #self.lower_x=self.model.set_variable(var_type='_tvp', var_name='lower_x', shape=(1,1))
         #self.lower_y=self.model.set_variable(var_type='_tvp', var_name='lower_y', shape=(1,1))
@@ -177,7 +181,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         
         
         
-        self.controller.set_nl_cons('upper', -(self.y-self.constraint_m*self.x+self.constraint_n_upper), ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        self.controller.set_nl_cons('upper', self.constraint_t_x*(self.y-self.constraint_p_y_upper)+self.constraint_t_y*(self.x-self.constraint_p_y_upper), ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        self.controller.set_nl_cons('lower', -(self.constraint_t_x*(self.y-self.constraint_p_y_lower)+self.constraint_t_y*(self.x-self.constraint_p_y_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        
         #self.controller.set_nl_cons('upper', -self.upper_y, ub = 0)
         #self.controller.set_nl_cons('upper', self.tvp_path_data_y_l+(self.tvp_path_tangent_y/self.tvp_path_tangent_x)*(self.state[0]-self.tvp_path_data_x_l), ub = 0)
         
@@ -228,6 +234,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             #vector equation of line
             #r=p+lambda*t (r: any point on line, p: knownn point on line, lambda: param, t: tangent to line)
             #i.e.
+            
             #r_x=p_x+lambda*t_x
             #r_y=p_y+lambda*t_y
             #eliminate lambda from system
@@ -236,24 +243,49 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             # let r_y= self.y, r_x=self.x then the car hits the border
             #hence thee constraint line is 0=y-mx+n
             #where m=p_y-(t_y/t_x))*p_x, n=t_y/t_x
-
-            #to be below the line: inequality (but I'm confused about direction because of left/right, upper/lower)
-            #template["_tvp", k, "upper_y"] =(self.path_data_y_l[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.x-self.path_data_x_l[i]))
-            # #now for points that need to lie below the line, every x value p_x of the projected trajectory needs to have a lower y value --> ry-y>0
-            template["_tvp", k, "constraint_m"] =(self.path_data_y_l[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_l[i])
-            template["_tvp", k, "constraint_n_upper"] =(self.path_tangent_y[i]/self.path_tangent_x[i])
+            #but of course this will inevitably cause problems once t_x=0, so we rearrange again:
+            #0=t_x*(r_y-p_y)+t_y*(r_x-p_x)
             
+            #in a very basic approach, I'm going to just assume the constraint lines are parallel. 
+            #I'm then going to figure out which n (left or right) belongs to the upper and which to lower
+            #bound by (get ready for it)  comparing them and deducing, with all the two-and-a-half braincells 
+            #I have left, that the larger one belongs to the upper bound. Magic.
+            template["_tvp", k, "constraint_t_x"] = self.path_tangent_x[i]
+            template["_tvp", k, "constraint_t_y"] = self.path_tangent_y[i]
+            if self.path_tangent_x[i]==0:
+
+
+                if self.path_tangent_y[i]==0:
+                    raise Exception("Tangent vector to wall is 0 vector")
+                y_l=self.path_data_y_l[i]
+                y_r=self.path_data_y_r[i]
+                if y_l>y_r:
+                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_l[i]
+                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_r[i]
+                else:
+                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_r[i]
+                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_l[i]
+            else:
+                n_left=(self.path_data_y_l[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_l[i])
+                n_right=(self.path_data_y_r[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_r[i])
+                if n_left>n_right:
+                    #left=upper bound
+                    template["_tvp", k, "constraint_p_x_upper"] = self.path_data_x_l[i]
+                    template["_tvp", k, "constraint_p_x_lower"] = self.path_data_x_r[i]
+                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_l[i]
+                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_r[i]
+                elif n_left<n_right:
+                    template["_tvp", k, "constraint_p_x_upper"] = self.path_data_x_r[i]
+                    template["_tvp", k, "constraint_p_x_lower"] = self.path_data_x_l[i]
+                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_r[i]
+                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_l[i]
+                else: #this should never happen because then the lines are identical
+                    raise Exception("n_left=n_right")
             #other ideas I had but couldn't quite figure out how to get them to work
             #the normal from trajectory point r to the line needs to point the same way as the one used to calculate the line
-            #something with the crossproduct/ sign of a determiinant?
+            #something with the crossproduct/ sign of a determiinant
             
 
-            #tried this to get rid of the error mentioned in set_nl_cons, but that didn't work
-            # template["_tvp", k, "tvp_path_data_y_l"] =self.path_data_y_l[i]
-            # template["_tvp", k, "tvp_path_data_x_l"] =self.path_data_x_l[i]
-            # template["_tvp", k, "tvp_path_tangent_x"] =self.path_tangent_x[i]
-            # template["_tvp", k, "tvp_path_tangent_y"] =self.path_tangent_y[i]
-        ##print(template["_tvp", :, "upper_y"])
 
         vis_point=visualiser.TargetMarker(self.path_data_x[(self.index+self.n_horizon)%self.path_length], self.path_data_y[(self.index+self.n_horizon)%self.path_length], 1)
         vis_point.draw_point()
