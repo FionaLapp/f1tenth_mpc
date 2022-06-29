@@ -34,8 +34,9 @@ import helper.visualiser as visualiser
 class BaseController(ABC):
     """ 
     """
-    def __init__(self, max_speed=None):
+    def __init__(self, max_speed=None, add_markers=True):
         self.setup_finished=False
+        self.add_markers=add_markers
         self.params=self.get_params()
         self.setup_node()
         if max_speed is None:
@@ -107,9 +108,10 @@ class BaseController(ABC):
         #plotting the predicted  trajectorry
         x_pred=self.controller.data.prediction(('_x', 'x')).flatten()
         y_pred=self.controller.data.prediction(('_x', 'y')).flatten()
-        vis_point=visualiser.TrajectoryMarker(x_pred, y_pred, 1)  #somehow this dooesn't show up in the right colour or line thickness but for now it'll do
-        vis_point.draw_point()
-        
+        if self.add_markers:
+            vis_point=visualiser.TrajectoryMarker(x_pred, y_pred, 1)  #somehow this dooesn't show up in the right colour or line thickness but for now it'll do
+            vis_point.draw_point()
+            
         #sending control input to /drive topic
         delta=u[0]
         v=u[1]
@@ -223,10 +225,12 @@ class BaseController(ABC):
             
             template["_tvp", k, "target_x"]=self.path_data[' x_m'][(self.index+k)%self.path_length]
             template["_tvp", k, "target_y"] =self.path_data[' y_m'][(self.index+k)%self.path_length]
-        vis_point=visualiser.TargetMarker(self.path_data_x[(self.index+self.n_horizon)%self.path_length], self.path_data_y[(self.index+self.n_horizon)%self.path_length], 1)
         
-        #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
-        vis_point.draw_point()
+        if self.add_markers:
+            vis_point=visualiser.TargetMarker(self.path_data_x[(self.index+self.n_horizon)%self.path_length], self.path_data_y[(self.index+self.n_horizon)%self.path_length], 1)
+            
+            #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
+            vis_point.draw_point()
         #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
         return template    
 

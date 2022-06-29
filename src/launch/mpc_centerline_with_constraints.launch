@@ -59,10 +59,11 @@
   <!-- Launch RVIZ -->
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>
    
-    <!-- Launch Hector trajectory server-->
+    <!-- Launch Hector trajectory server
     <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
    	<rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	 </node> 
+     -->
   	 
 </launch>

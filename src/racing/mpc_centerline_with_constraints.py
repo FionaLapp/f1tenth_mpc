@@ -35,8 +35,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
     """ This controoller reads in the line data from the centerline file, 
     then callculates wall points for each centerline point using the track-with provided in the custom param file
     """
-    def __init__(self, max_speed=None):
+    def __init__(self, max_speed=None, add_markers=True):
         self.setup_finished=False
+        self.add_markers=add_markers
         self.params=super().get_params()
         self.read_desired_path()
         super().setup_node()
@@ -272,19 +273,17 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             #     pass
             
 
+        if self.add_markers:
+            vis_point=visualiser.TargetMarker(self.path_data_x[self.index], self.path_data_y[self.index], 1)
+            vis_point.draw_point()
 
-        vis_point=visualiser.TargetMarker(self.path_data_x[self.index], self.path_data_y[self.index], 1)
-        vis_point.draw_point()
+            #plotting lines:
+            factor=5 #completely random length factor for displayed line
+            x_line_list=[p_x_upper-factor*self.path_tangent_x[self.index], p_x_upper+factor*self.path_tangent_x[self.index], p_x_lower-factor*self.path_tangent_x[self.index], p_x_lower+factor*self.path_tangent_x[self.index]]
+            y_line_list=[p_y_upper-factor*self.path_tangent_y[self.index], p_y_upper+factor*self.path_tangent_y[self.index], p_y_lower-factor*self.path_tangent_y[self.index], p_y_lower+factor*self.path_tangent_y[self.index]]
+            constraint_left_marker=visualiser.ConstraintMarker(x_line_list, y_line_list , 1)
+            constraint_left_marker.draw_point()
 
-        #plotting lines:
-        factor=5 #completely random length factor for displayed line
-        x_line_list=[p_x_upper-factor*self.path_tangent_x[self.index], p_x_upper+factor*self.path_tangent_x[self.index], p_x_lower-factor*self.path_tangent_x[self.index], p_x_lower+factor*self.path_tangent_x[self.index]]
-        y_line_list=[p_y_upper-factor*self.path_tangent_y[self.index], p_y_upper+factor*self.path_tangent_y[self.index], p_y_lower-factor*self.path_tangent_y[self.index], p_y_lower+factor*self.path_tangent_y[self.index]]
-        constraint_left_marker=visualiser.ConstraintMarker(x_line_list, y_line_list , 1)
-        constraint_left_marker.draw_point()
-
-        #m=visualiser.ConstraintMarker(self.path_data_x_l[self.index-1:(self.index+1)%len(self.path_data_x)], self.path_data_y_l[self.index-1:(self.index+1)%len(self.path_data_x)], 1)
-        #m.draw_point()
         return template   
 
     
@@ -353,7 +352,7 @@ def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
     
-    model_predictive_control =ControllerWithConstraints(max_speed=2)
+    model_predictive_control =ControllerWithConstraints(max_speed=4, add_markers=False)
     #uncomment beloow to create mpc graph
     #rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
     rospy.sleep(0.1)
