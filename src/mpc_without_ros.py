@@ -84,11 +84,9 @@ class BaseController:
         self.target_x=self.model.set_variable(var_type='_tvp', var_name='target_x', shape=(1,1))
         self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
 
-        #differential equations
-
-        # dx_dt= self.v * casadi.cos(self.phi+beta)
-        # dy_dt= self.v * casadi.sin(self.phi+beta)
-        # dphi_dt=(self.v/l_r)*casadi.sin(beta)
+        self.upper_y=self.model.set_variable(var_type='_tvp', var_name='upper_y', shape=(1,1))
+        
+        
 
         slip_factor = self.model.set_expression('slip_factor', casadi.arctan(l_r * casadi.tan(self.delta) /self.wheelbase))
         dx_dt= self.v * casadi.cos(self.phi + slip_factor)
@@ -182,6 +180,8 @@ class BaseController:
 
             template["_tvp", k, "target_x"]=self.goal_x
             template["_tvp", k, "target_y"] =self.goal_y
+            template["_tvp", k, "upper_y"] =(self.path_data_y_l[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.x-self.path_data_x_l[i]))
+            
         #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))
         return template
 

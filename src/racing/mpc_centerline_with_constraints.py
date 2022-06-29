@@ -91,10 +91,10 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             
             #update target: find the point on the centerline fiile closest to the current position, then go two further
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
-            self.index=distances_to_current_point.argmin()+2 %len(self.path_data_x)
+            self.index=distances_to_current_point.argmin()+4 %len(self.path_data_x)
             self.make_mpc_step(self.state)
-            m=visualiser.GapMarker(self.path_data_x_l[self.index-1:self.index+1], self.path_data_y_l[self.index-1:self.index+1], 1)
-            m.draw_point()
+            # m=visualiser.GapMarker(self.path_data_x_l[self.index-1:self.index+1], self.path_data_y_l[self.index-1:self.index+1], 1)
+            # m.draw_point()
         except AttributeError:
             rospy.loginfo("Initialisation not finished")
 
@@ -174,18 +174,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
 
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
         self.controller.bounds['upper','_u','v'] = max_speed
-
-        #tried to set halfspace constraints but getting this error:
-        #CasADi - 2022-06-23 17:10:23 WARNING("S:nlp_g failed: NaN detected for output g, at (row 15, col 0).")CasADi - 2022-06-23 17:10:23 WARNING("S:nlp_g failed: NaN detected for output g, at (row 15, col 0).")CasADi - 2022-06-23 17:10:23 WARNING("S:nlp_g failed: NaN detected for output g, at (row 15, col 0).")
-        #also haven't figured out yet what exactly upperbound should be (and if I need to switch the sign on upper_y onn the tvp template)
         
-        
-        
-        self.controller.set_nl_cons('upper', self.constraint_t_x*(self.y-self.constraint_p_y_upper)+self.constraint_t_y*(self.x-self.constraint_p_y_upper), ub=0, soft_constraint=True, penalty_term_cons=1e4)
-        self.controller.set_nl_cons('lower', -(self.constraint_t_x*(self.y-self.constraint_p_y_lower)+self.constraint_t_y*(self.x-self.constraint_p_y_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
-        
-        #self.controller.set_nl_cons('upper', -self.upper_y, ub = 0)
-        #self.controller.set_nl_cons('upper', self.tvp_path_data_y_l+(self.tvp_path_tangent_y/self.tvp_path_tangent_x)*(self.state[0]-self.tvp_path_data_x_l), ub = 0)
+        self.upper=self.controller.set_nl_cons('upper', self.constraint_t_x*(self.y-self.constraint_p_y_upper)+self.constraint_t_y*(self.x-self.constraint_p_y_upper), ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        #self.lower=self.controller.set_nl_cons('lower', -(self.constraint_t_x*(self.y-self.constraint_p_y_lower)+self.constraint_t_y*(self.x-self.constraint_p_y_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
         
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
@@ -205,25 +196,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         
         rospy.loginfo("MPC set up finished")  
     
-    #ignore this
-    # @property
-    # def stage_cost(self):
-    #     """
-    #     none
-    #     """
-    #     #if outward normal points up (y>0):
-    #     #need point to be below line
-    #     #if outward normal points down (y<0): need point above line
-    #     #if outward normal y=0:
-    #         #if outward normal points left(x<0): need point to right
-    #         #if outward normal points   right(x>0): need point to left
-    #         #if x=0: error
-                
-    #     if self.model.x['x']>0:
-    #         return casadi.DM.ones()
-    #     else:
-    #         casadi.DM.zeros()
-
+   
     def prepare_goal_template(self, t_now):
         template = self.controller.get_tvp_template()
         
@@ -281,16 +254,25 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
                     template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_l[i]
                 else: #this should never happen because then the lines are identical
                     raise Exception("n_left=n_right")
-            #other ideas I had but couldn't quite figure out how to get them to work
-            #the normal from trajectory point r to the line needs to point the same way as the one used to calculate the line
-            #something with the crossproduct/ sign of a determiinant
+            # try:
+            #     print(self.controller.nlp_cons_lb)
+
+            # except:
+            #     pass
             
 
 
-        vis_point=visualiser.TargetMarker(self.path_data_x[(self.index+self.n_horizon)%self.path_length], self.path_data_y[(self.index+self.n_horizon)%self.path_length], 1)
-        vis_point.draw_point()
-        m=visualiser.GapMarker(self.path_data_x_l[self.index-1:(self.index+1)%len(self.path_data_x)], self.path_data_y_l[self.index-1:(self.index+1)%len(self.path_data_x)], 1)
-        m.draw_point()
+        #vis_point=visualiser.TargetMarker(self.target_x, self.target_y, 1)
+        #vis_point.draw_point()
+
+        #plotting lines:
+        # x_line_list=[self.constraint_p_x_upper, self.constraint_p_x_upper+5*self.path_tangent_x[self.index]]
+        # y_line_list=[self.constraint_p_y_upper, self.constraint_p_y_upper+5*self.path_tangent_y[self.index]]
+        # constraint_left_marker=visualiser.ConstraintMarker(x_line_list, y_line_list , 1)
+        # constraint_left_marker.draw_point()
+
+        #m=visualiser.ConstraintMarker(self.path_data_x_l[self.index-1:(self.index+1)%len(self.path_data_x)], self.path_data_y_l[self.index-1:(self.index+1)%len(self.path_data_x)], 1)
+        #m.draw_point()
         return template   
     def plot_mpc(self, event):
         # self.configure_graphics()
