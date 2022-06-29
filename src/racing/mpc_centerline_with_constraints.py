@@ -233,47 +233,60 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
                 y_l=self.path_data_y_l[i]
                 y_r=self.path_data_y_r[i]
                 if y_l>y_r:
+                    
                     template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_l[i]
                     template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_r[i]
                 else:
                     template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_r[i]
                     template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_l[i]
+                
             else:
+                
+                #calculate y-value of x-value corresponding to current car position. if current car y < line y --> point below line
                 n_left=(self.path_data_y_l[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_l[i])
                 n_right=(self.path_data_y_r[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_r[i])
                 if n_left>n_right:
                     #left=upper bound
-                    template["_tvp", k, "constraint_p_x_upper"] = self.path_data_x_l[i]
-                    template["_tvp", k, "constraint_p_x_lower"] = self.path_data_x_r[i]
-                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_l[i]
-                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_r[i]
+                    #print("left wall above car")
+                    p_x_upper= self.path_data_x_l[i]
+                    p_x_lower = self.path_data_x_r[i]
+                    p_y_upper = self.path_data_y_l[i]
+                    p_y_lower = self.path_data_y_r[i]
                 elif n_left<n_right:
-                    template["_tvp", k, "constraint_p_x_upper"] = self.path_data_x_r[i]
-                    template["_tvp", k, "constraint_p_x_lower"] = self.path_data_x_l[i]
-                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_r[i]
-                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_l[i]
+                    #print("right wall above car")
+                    p_x_upper= self.path_data_x_r[i]
+                    p_x_lower= self.path_data_x_l[i]
+                    p_y_upper= self.path_data_y_r[i]
+                    p_y_lower = self.path_data_y_l[i]
                 else: #this should never happen because then the lines are identical
                     raise Exception("n_left=n_right")
+                template["_tvp", k, "constraint_p_x_upper"] = p_x_upper
+                template["_tvp", k, "constraint_p_x_lower"] = p_x_lower
+                template["_tvp", k, "constraint_p_y_upper"] = p_y_upper
+                template["_tvp", k, "constraint_p_y_lower"] = p_y_lower
             # try:
-            #     print(self.controller.nlp_cons_lb)
+            #     print(self.controller.nlp_cons)
 
             # except:
             #     pass
             
 
 
-        #vis_point=visualiser.TargetMarker(self.target_x, self.target_y, 1)
-        #vis_point.draw_point()
+        vis_point=visualiser.TargetMarker(self.path_data_x[self.index], self.path_data_y[self.index], 1)
+        vis_point.draw_point()
 
         #plotting lines:
-        # x_line_list=[self.constraint_p_x_upper, self.constraint_p_x_upper+5*self.path_tangent_x[self.index]]
-        # y_line_list=[self.constraint_p_y_upper, self.constraint_p_y_upper+5*self.path_tangent_y[self.index]]
-        # constraint_left_marker=visualiser.ConstraintMarker(x_line_list, y_line_list , 1)
-        # constraint_left_marker.draw_point()
+        factor=5 #completely random length factor for displayed line
+        x_line_list=[p_x_upper-factor*self.path_tangent_x[self.index], p_x_upper+factor*self.path_tangent_x[self.index], p_x_lower-factor*self.path_tangent_x[self.index], p_x_lower+factor*self.path_tangent_x[self.index]]
+        y_line_list=[p_y_upper-factor*self.path_tangent_y[self.index], p_y_upper+factor*self.path_tangent_y[self.index], p_y_lower-factor*self.path_tangent_y[self.index], p_y_lower+factor*self.path_tangent_y[self.index]]
+        constraint_left_marker=visualiser.ConstraintMarker(x_line_list, y_line_list , 1)
+        constraint_left_marker.draw_point()
 
         #m=visualiser.ConstraintMarker(self.path_data_x_l[self.index-1:(self.index+1)%len(self.path_data_x)], self.path_data_y_l[self.index-1:(self.index+1)%len(self.path_data_x)], 1)
         #m.draw_point()
         return template   
+
+    
     def plot_mpc(self, event):
         # self.configure_graphics()
         # self._plotter.plot_results()
