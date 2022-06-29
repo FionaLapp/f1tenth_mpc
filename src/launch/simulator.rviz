@@ -176,7 +176,6 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-      Pose Color: 153; 170; 187, 0.5
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /trajectory_vis
@@ -351,7 +350,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.138577699661255
+      Yaw: -1.538577699661255
     Saved: ~
 Window Geometry:
   Displays:
