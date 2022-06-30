@@ -84,11 +84,9 @@ class BaseController:
         self.target_x=self.model.set_variable(var_type='_tvp', var_name='target_x', shape=(1,1))
         self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
 
-        #differential equations
-
-        # dx_dt= self.v * casadi.cos(self.phi+beta)
-        # dy_dt= self.v * casadi.sin(self.phi+beta)
-        # dphi_dt=(self.v/l_r)*casadi.sin(beta)
+        self.upper_y=self.model.set_variable(var_type='_tvp', var_name='upper_y', shape=(1,1))
+        
+        
 
         slip_factor = self.model.set_expression('slip_factor', casadi.arctan(l_r * casadi.tan(self.delta) /self.wheelbase))
         dx_dt= self.v * casadi.cos(self.phi + slip_factor)
@@ -125,6 +123,17 @@ class BaseController:
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
         self.controller.bounds['upper','_u','v'] = 4#self.params['max_speed']
 
+
+        #tried to set halfspace constraints but getting this error:
+        #CasADi - 2022-06-23 17:10:23 WARNING("S:nlp_g failed: NaN detected for output g, at (row 15, col 0).")CasADi - 2022-06-23 17:10:23 WARNING("S:nlp_g failed: NaN detected for output g, at (row 15, col 0).")CasADi - 2022-06-23 17:10:23 WARNING("S:nlp_g failed: NaN detected for output g, at (row 15, col 0).")
+        #also haven't figured out yet what exactly upperbound should be (and if I need to switch the sign on upper_y onn the tvp template)
+        
+        
+        
+        #self.controller.set_nl_cons('upper', self.model.tvp['upper_y'], ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        #self.controller.set_nl_cons('upper', -self.upper_y, ub = 0)
+        #self.controller.set_nl_cons('upper', self.tvp_path_data_y_l+(self.tvp_path_tangent_y/self.tvp_path_tangent_x)*(self.state[0]-self.tvp_path_data_x_l), ub = 0)
+        
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.r=20
         self.controller.set_rterm(v=self.r)
@@ -171,6 +180,8 @@ class BaseController:
 
             template["_tvp", k, "target_x"]=self.goal_x
             template["_tvp", k, "target_y"] =self.goal_y
+            template["_tvp", k, "upper_y"] =(self.path_data_y_l[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.x-self.path_data_x_l[i]))
+            
         #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))
         return template
 

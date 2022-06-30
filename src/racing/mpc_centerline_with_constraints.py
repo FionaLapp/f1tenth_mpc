@@ -35,8 +35,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
     """ This controoller reads in the line data from the centerline file, 
     then callculates wall points for each centerline point using the track-with provided in the custom param file
     """
-    def __init__(self, max_speed=None):
+    def __init__(self, max_speed=None, add_markers=True):
         self.setup_finished=False
+        self.add_markers=add_markers
         self.params=super().get_params()
         self.read_desired_path()
         super().setup_node()
@@ -91,10 +92,10 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             
             #update target: find the point on the centerline fiile closest to the current position, then go two further
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
-            self.index=distances_to_current_point.argmin()+2 %len(self.path_data_x)
+            self.index=(distances_to_current_point.argmin()+4) %self.path_length
             self.make_mpc_step(self.state)
-            m=visualiser.GapMarker(self.path_data_x_l[self.index-1:self.index+1], self.path_data_y_l[self.index-1:self.index+1], 1)
-            m.draw_point()
+            # m=visualiser.GapMarker(self.path_data_x_l[self.index-1:self.index+1], self.path_data_y_l[self.index-1:self.index+1], 1)
+            # m.draw_point()
         except AttributeError:
             rospy.loginfo("Initialisation not finished")
 
@@ -120,7 +121,14 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         ##constraint params
         ##
         #self.upper_x=self.model.set_variable(var_type='_tvp', var_name='upper_x', shape=(1,1))
-        self.upper_y=self.model.set_variable(var_type='_tvp', var_name='upper_y', shape=(1,1))
+        self.constraint_t_x=self.model.set_variable(var_type='_tvp', var_name='constraint_t_x', shape=(1,1))
+        self.constraint_t_y=self.model.set_variable(var_type='_tvp', var_name='constraint_t_y', shape=(1,1))
+        
+        self.constraint_p_x_lower=self.model.set_variable(var_type='_tvp', var_name='constraint_p_x_lower', shape=(1,1))
+        self.constraint_p_x_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_p_x_upper', shape=(1,1))
+        self.constraint_p_y_lower=self.model.set_variable(var_type='_tvp', var_name='constraint_p_y_lower', shape=(1,1))
+        self.constraint_p_y_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_p_y_upper', shape=(1,1))
+        
         #self.lower_x=self.model.set_variable(var_type='_tvp', var_name='lower_x', shape=(1,1))
         #self.lower_y=self.model.set_variable(var_type='_tvp', var_name='lower_y', shape=(1,1))
 
@@ -167,16 +175,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
 
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
         self.controller.bounds['upper','_u','v'] = max_speed
-
-        #tried to set halfspace constraints but getting this error:
-        #CasADi - 2022-06-23 17:10:23 WARNING("S:nlp_g failed: NaN detected for output g, at (row 15, col 0).")CasADi - 2022-06-23 17:10:23 WARNING("S:nlp_g failed: NaN detected for output g, at (row 15, col 0).")CasADi - 2022-06-23 17:10:23 WARNING("S:nlp_g failed: NaN detected for output g, at (row 15, col 0).")
-        #also haven't figured out yet what exactly upperbound should be (and if I need to switch the sign on upper_y onn the tvp template)
         
-        
-        
-        #self.controller.set_nl_cons('upper', self.model.tvp['upper_y'], ub=0, soft_constraint=True, penalty_term_cons=1e4)
-        #self.controller.set_nl_cons('upper', -self.upper_y, ub = 0)
-        #self.controller.set_nl_cons('upper', self.tvp_path_data_y_l+(self.tvp_path_tangent_y/self.tvp_path_tangent_x)*(self.state[0]-self.tvp_path_data_x_l), ub = 0)
+        self.upper=self.controller.set_nl_cons('upper', self.constraint_t_x*(self.y-self.constraint_p_y_upper)-self.constraint_t_y*(self.x-self.constraint_p_x_upper), ub=0,soft_constraint=True, penalty_term_cons=1e4)
+        self.lower=self.controller.set_nl_cons('lower', -(self.constraint_t_x*(self.y-self.constraint_p_y_lower)-self.constraint_t_y*(self.x-self.constraint_p_x_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
         
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
@@ -196,25 +197,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         
         rospy.loginfo("MPC set up finished")  
     
-    #ignore this
-    # @property
-    # def stage_cost(self):
-    #     """
-    #     none
-    #     """
-    #     #if outward normal points up (y>0):
-    #     #need point to be below line
-    #     #if outward normal points down (y<0): need point above line
-    #     #if outward normal y=0:
-    #         #if outward normal points left(x<0): need point to right
-    #         #if outward normal points   right(x>0): need point to left
-    #         #if x=0: error
-                
-    #     if self.model.x['x']>0:
-    #         return casadi.DM.ones()
-    #     else:
-    #         casadi.DM.zeros()
-
+   
     def prepare_goal_template(self, t_now):
         template = self.controller.get_tvp_template()
         
@@ -222,37 +205,88 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             i=(self.index)%self.path_length
             template["_tvp", k, "target_x"]=self.path_data[' x_m'][i]
             template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
-            
-            #equation of line
+            #vector equation of line
             #r=p+lambda*t (r: any point on line, p: knownn point on line, lambda: param, t: tangent to line)
             #i.e.
+            
             #r_x=p_x+lambda*t_x
             #r_y=p_y+lambda*t_y
             #eliminate lambda from system
             #lambda=(r_x-p_x)/t_x
-            #r_y=p_y+t_y*(r_x-p_x)/t_x  
-            template["_tvp", k, "upper_y"] =(self.path_data_y_l[i]+(self.path_tangent_y[i]/self.path_tangent_x[i])*(self.x-self.path_data_x_l[i]))
+            #0=r_y-p_y-t_y*(r_x-p_x)/t_x
+            # let r_y= self.y, r_x=self.x then the car hits the border
+            #hence thee constraint line is 0=y-mx+n
+            #where m=p_y-(t_y/t_x))*p_x, n=t_y/t_x
+            #but of course this will inevitably cause problems once t_x=0, so we rearrange again:
+            #0=t_x*(r_y-p_y)-t_y*(r_x-p_x)
             
-            # #now for points that need to lie below the line, every x value p_x of the projected trajectory needs to have a lower y value --> ry-y>0
+            #in a very basic approach, I'm going to just assume the constraint lines are parallel. 
+            #I'm then going to figure out which n (left or right) belongs to the upper and which to lower
+            #bound by (get ready for it)  comparing them and deducing, with all the two-and-a-half braincells 
+            #I have left, that the larger one belongs to the upper bound. Magic.
+            template["_tvp", k, "constraint_t_x"] = self.path_tangent_x[i]
+            template["_tvp", k, "constraint_t_y"] = self.path_tangent_y[i]
+            if self.path_tangent_x[i]==0:
+                print("x tangent=0")
 
-            #other ideas I had but couldn't quite figure out how to get them to work
-            #the normal from trajectory point r to the line needs to point the same way as the one used to calculate the line
-            #something with the crossproduct/ sign of a determiinant?
+                if self.path_tangent_y[i]==0:
+                    raise Exception("Tangent vector to wall is 0 vector")
+                y_l=self.path_data_y_l[i]
+                y_r=self.path_data_y_r[i]
+                if y_l>y_r:
+                    
+                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_l[i]
+                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_r[i]
+                else:
+                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_r[i]
+                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_l[i]
+                
+            else:
+                
+                #calculate y-value of x-value corresponding to current car position. if current car y < line y --> point below line
+                n_left=(self.path_data_y_l[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_l[i])
+                n_right=(self.path_data_y_r[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_r[i])
+                if n_left>n_right:
+                    #print("n_left:{}, n_right:{}".format(n_left, n_right))
+                    #print("left wall above car")
+                    p_x_upper= self.path_data_x_l[i]
+                    p_x_lower = self.path_data_x_r[i]
+                    p_y_upper = self.path_data_y_l[i]
+                    p_y_lower = self.path_data_y_r[i]
+                elif n_left<n_right:
+                    #print("right wall above car")
+                    #print("n_left:{}, n_right:{}".format(n_left, n_right))
+                    p_x_upper= self.path_data_x_r[i]
+                    p_x_lower= self.path_data_x_l[i]
+                    p_y_upper= self.path_data_y_r[i]
+                    p_y_lower = self.path_data_y_l[i]
+                else: #this should never happen because then the lines are identical
+                    raise Exception("n_left=n_right")
+                template["_tvp", k, "constraint_p_x_upper"] = p_x_upper
+                template["_tvp", k, "constraint_p_x_lower"] = p_x_lower
+                template["_tvp", k, "constraint_p_y_upper"] = p_y_upper
+                template["_tvp", k, "constraint_p_y_lower"] = p_y_lower
+            # try:
+            #     print(self.controller.nlp_cons)
+
+            # except:
+            #     pass
             
 
-            #tried this to get rid of the error mentioned in set_nl_cons, but that didn't work
-            # template["_tvp", k, "tvp_path_data_y_l"] =self.path_data_y_l[i]
-            # template["_tvp", k, "tvp_path_data_x_l"] =self.path_data_x_l[i]
-            # template["_tvp", k, "tvp_path_tangent_x"] =self.path_tangent_x[i]
-            # template["_tvp", k, "tvp_path_tangent_y"] =self.path_tangent_y[i]
-           
+        if self.add_markers:
+            vis_point=visualiser.TargetMarker(self.path_data_x[self.index], self.path_data_y[self.index], 1)
+            vis_point.draw_point()
 
+            #plotting lines:
+            factor=5 #completely random length factor for displayed line
+            x_line_list=[p_x_upper-factor*self.path_tangent_x[self.index], p_x_upper+factor*self.path_tangent_x[self.index], p_x_lower-factor*self.path_tangent_x[self.index], p_x_lower+factor*self.path_tangent_x[self.index]]
+            y_line_list=[p_y_upper-factor*self.path_tangent_y[self.index], p_y_upper+factor*self.path_tangent_y[self.index], p_y_lower-factor*self.path_tangent_y[self.index], p_y_lower+factor*self.path_tangent_y[self.index]]
+            constraint_left_marker=visualiser.ConstraintMarker(x_line_list, y_line_list , 1)
+            constraint_left_marker.draw_point()
 
-        vis_point=visualiser.TargetMarker(self.path_data_x[(self.index+self.n_horizon)%self.path_length], self.path_data_y[(self.index+self.n_horizon)%self.path_length], 1)
-        vis_point.draw_point()
-        m=visualiser.GapMarker(self.path_data_x_l[self.index-1:(self.index+1)%len(self.path_data_x)], self.path_data_y_l[self.index-1:(self.index+1)%len(self.path_data_x)], 1)
-        m.draw_point()
         return template   
+
+    
     def plot_mpc(self, event):
         # self.configure_graphics()
         # self._plotter.plot_results()
@@ -318,7 +352,7 @@ def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
     
-    model_predictive_control =ControllerWithConstraints(max_speed=2)
+    model_predictive_control =ControllerWithConstraints(max_speed=4, add_markers=False)
     #uncomment beloow to create mpc graph
     #rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
     rospy.sleep(0.1)

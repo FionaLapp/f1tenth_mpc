@@ -170,6 +170,14 @@ Visualization Manager:
       Pose Color: 255; 0; 0, 1
     - Class: rviz/Marker
       Enabled: true
+      Marker Topic: /constraint_vis
+      Name: ConstraintMarker
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
       Marker Topic: /trajectory_vis
       Name: TrajectoryMarker
       Namespaces:
@@ -342,7 +350,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.138577699661255
+      Yaw: -1.538577699661255
     Saved: ~
 Window Geometry:
   Displays:
