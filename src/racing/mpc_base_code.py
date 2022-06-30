@@ -137,7 +137,7 @@ class BaseController(ABC):
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         Please call make_mpc_step in this method and update goal
         """
-        self.path_length=1#
+        pass
         
 
     def setup_mpc(self, max_speed, n_horizon=5):

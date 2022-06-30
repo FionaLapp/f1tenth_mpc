@@ -40,7 +40,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.add_markers=add_markers
         self.params=super().get_params()
         self.read_desired_path()
-        self.setup_node()
+        super().setup_node()
         if max_speed is None:
             max_speed=self.params['max_speed']
         self.state=[0,0,0]
