@@ -243,7 +243,7 @@ class BaseController(ABC):
         """
         none
         """
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 
+        return casadi.DM.zeros()
 
     @property
     def terminal_cost(self):
