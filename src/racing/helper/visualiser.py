@@ -60,7 +60,7 @@ class VisMarker(ABC):
 class TargetMarker(VisMarker):
     def __init__(self, x:float, y:float, duration:float):
         super().__init__(x, y, duration)
-        self.marker.type = self.marker.SPHERE
+        self.marker.type = self.marker.SPHERE_LIST
 
         
         #this seems to be a bit pointless because the colour is actually decided in the simulator.rviz file but if I leave it out it doesn't show up
@@ -114,7 +114,7 @@ class ConstraintMarker(VisMarker):
         # self.marker.color.a = 1.0
         red= ColorRGBA(r=255, g=0, b=0, a=1)
         green=ColorRGBA(r=0, g=255, b=0, a=1)
-        self.marker.colors=[red, red, green, green]
+        self.marker.colors=len(self.marker.points)*[red]
         topic_name='/constraint_vis'
         self.channel=Publisher(topic_name, Marker, queue_size=100)
 

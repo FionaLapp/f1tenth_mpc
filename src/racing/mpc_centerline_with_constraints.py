@@ -92,7 +92,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             
             #update target: find the point on the centerline fiile closest to the current position, then go two further
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
-            self.index=(distances_to_current_point.argmin()+4) %self.path_length
+            self.index=(distances_to_current_point.argmin()+2) %self.path_length
             self.make_mpc_step(self.state)
             # m=visualiser.GapMarker(self.path_data_x_l[self.index-1:self.index+1], self.path_data_y_l[self.index-1:self.index+1], 1)
             # m.draw_point()
@@ -181,7 +181,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
-        self.controller.set_rterm(delta=1)
+        self.controller.set_rterm(delta=4)
 
         self.controller.setup()
 
@@ -200,9 +200,12 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
    
     def prepare_goal_template(self, t_now):
         template = self.controller.get_tvp_template()
-        
+        x_line_list=[]
+        y_line_list=[]
+        target_marker_list_x=[]
+        target_marker_list_y=[]
         for k in range(self.n_horizon + 1):
-            i=(self.index)%self.path_length
+            i=(self.index+k)%self.path_length
             template["_tvp", k, "target_x"]=self.path_data[' x_m'][i]
             template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
             #vector equation of line
@@ -273,14 +276,21 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             #     pass
             
 
+            if self.add_markers:
+                
+                target_marker_list_x.append(self.path_data_x[i])
+                
+                target_marker_list_y.append( self.path_data_y[i])
+                #plotting lines:
+                factor=5 #completely random length factor for displayed line
+                x_line_list.extend([p_x_upper-factor*self.path_tangent_x[i], p_x_upper+factor*self.path_tangent_x[i]])
+                x_line_list.extend( [p_x_lower-factor*self.path_tangent_x[i], p_x_lower+factor*self.path_tangent_x[i]])
+                y_line_list.extend([p_y_upper-factor*self.path_tangent_y[i], p_y_upper+factor*self.path_tangent_y[i]])
+                y_line_list.extend( [p_y_lower-factor*self.path_tangent_y[i], p_y_lower+factor*self.path_tangent_y[i]])
+        
         if self.add_markers:
-            vis_point=visualiser.TargetMarker(self.path_data_x[self.index], self.path_data_y[self.index], 1)
+            vis_point=visualiser.TargetMarker(target_marker_list_x, target_marker_list_y, 1)
             vis_point.draw_point()
-
-            #plotting lines:
-            factor=5 #completely random length factor for displayed line
-            x_line_list=[p_x_upper-factor*self.path_tangent_x[self.index], p_x_upper+factor*self.path_tangent_x[self.index], p_x_lower-factor*self.path_tangent_x[self.index], p_x_lower+factor*self.path_tangent_x[self.index]]
-            y_line_list=[p_y_upper-factor*self.path_tangent_y[self.index], p_y_upper+factor*self.path_tangent_y[self.index], p_y_lower-factor*self.path_tangent_y[self.index], p_y_lower+factor*self.path_tangent_y[self.index]]
             constraint_left_marker=visualiser.ConstraintMarker(x_line_list, y_line_list , 1)
             constraint_left_marker.draw_point()
 
@@ -352,7 +362,7 @@ def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
     
-    model_predictive_control =ControllerWithConstraints(max_speed=4, add_markers=False)
+    model_predictive_control =ControllerWithConstraints(max_speed=2, add_markers=True)
     #uncomment beloow to create mpc graph
     #rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
     rospy.sleep(0.1)
