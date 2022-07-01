@@ -29,9 +29,10 @@ import helper.visualiser as visualiser
 class FTGController(mpc_base_code.BaseController):
     """ 
     """
-    def __init__(self, max_speed=None, max_range=2, bubble_radius=10, threshold=2):
+    def __init__(self, add_markers=True, max_speed=None, max_range=2, bubble_radius=10, threshold=2):
         self.params=super().get_params()
         self.setup_finished=False
+        self.add_markers=add_markers
         self.setup_laser_scan()
         self.t_x=0
         self.t_y=0
@@ -121,8 +122,8 @@ class FTGController(mpc_base_code.BaseController):
             laser_angle = (index * self.angle_increment) + self.angle_min 
             heading_angle=self.state[2]
             point_angle = laser_angle + heading_angle
-            p_x = self.proc_ranges[index] * np.cos(point_angle) + self.state[0] 
-            p_y =self.proc_ranges[index]  * np.sin(point_angle) + self.state[1]
+            p_x = self.proc_ranges[index] * np.cos(point_angle) + self.state[0] +0.265*np.cos(heading_angle)
+            p_y =self.proc_ranges[index]  * np.sin(point_angle) + self.state[1] +0.265*np.sin(heading_angle)
             return p_x, p_y
         
 
@@ -157,12 +158,16 @@ class FTGController(mpc_base_code.BaseController):
             gap_x_array.append(temp_x)
             gap_y_array.append(temp_y)
         if not len(gap_x_array)==0:   #if the list is empty, just stick to the old target points 
-            gap_line=visualiser.GapMarker(gap_x_array, gap_y_array, 1)
-            gap_line.draw_point()
-            #a_x, a_y= self.lidar_to_xy(0)
-            #gap_point=visualiser.TargetMarker(a_x, a_y, 1)
-            gap_point=visualiser.TargetMarker(self.t_x, self.t_y, 1)
-            gap_point.draw_point()
+            
+            
+            if self.add_markers:
+                
+                gap_line=visualiser.GapMarker(gap_x_array, gap_y_array, 1)
+                gap_line.draw_point()
+                #a_x, a_y= self.lidar_to_xy(0)
+                #gap_point=visualiser.TargetMarker(a_x, a_y, 1)
+                gap_point=visualiser.TargetMarker(self.t_x, self.t_y, 1)
+                gap_point.draw_point()
             
 
     def prepare_goal_template(self, t_now):
