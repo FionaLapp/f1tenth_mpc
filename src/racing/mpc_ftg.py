@@ -191,7 +191,7 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =FTGController(max_speed=1)
+    model_predictive_control =FTGController(max_speed=3, max_range=4, bubble_radius=10, threshold=4)
     rospy.sleep(0.1)
     rospy.spin()
 

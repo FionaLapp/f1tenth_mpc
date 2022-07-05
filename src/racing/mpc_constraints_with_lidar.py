@@ -39,7 +39,7 @@ class ControllerWithLidarConstraints(constraint_base_class):
     """ This controoller reads in the line data from the centerline file, 
     then callculates wall points for each centerline point using the track-with provided in the custom param file
     """
-    def __init__(self, max_speed=None, add_markers=True, max_range=5, bubble_radius=10, threshold=5):
+    def __init__(self, max_speed=None, add_markers=True, max_range=3, bubble_radius=10, threshold=3):
         self.setup_finished=False
         self.add_markers=add_markers
         self.params=super().get_params()
@@ -134,8 +134,8 @@ class ControllerWithLidarConstraints(constraint_base_class):
             laser_angle = (index * self.angle_increment) + self.angle_min 
             heading_angle=self.state[2]
             point_angle = laser_angle + heading_angle
-            p_x = self.proc_ranges[index] * np.cos(point_angle) + self.state[0] 
-            p_y =self.proc_ranges[index]  * np.sin(point_angle) + self.state[1]
+            p_x = self.proc_ranges[index] * np.cos(point_angle) + self.state[0] +0.265*np.cos(heading_angle)
+            p_y =self.proc_ranges[index]  * np.sin(point_angle) + self.state[1]+0.265*np.sin(heading_angle)
             return p_x, p_y
         
     
@@ -396,8 +396,8 @@ class ControllerWithLidarConstraints(constraint_base_class):
                 y_line_list.extend([p_y_lower_lidar-factor*self.path_tangent_y[i], p_y_lower_lidar+factor*self.path_tangent_y[i]])
         
         if self.add_markers:
-            # vis_point=visualiser.TargetMarker(target_marker_list_x, target_marker_list_y, 1)
-            # vis_point.draw_point()
+            vis_point=visualiser.TargetMarker(target_marker_list_x, target_marker_list_y, 1)
+            vis_point.draw_point()
             constraint_left_marker=visualiser.ConstraintMarker(x_line_list, y_line_list , 1)
             constraint_left_marker.draw_point()
 
@@ -408,7 +408,7 @@ class ControllerWithLidarConstraints(constraint_base_class):
 def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =ControllerWithLidarConstraints(max_speed=3, add_markers=True)
+    model_predictive_control =ControllerWithLidarConstraints(max_speed=2, add_markers=True)
     rospy.sleep(0.1)
     rospy.spin()
     
