@@ -220,14 +220,17 @@ class BaseController(ABC):
     def prepare_goal_template(self, t_now):
         
         template = self.controller.get_tvp_template()
-
+        target_x_list=[]
+        target_y_list=[]
         for k in range(self.n_horizon + 1):
-            
-            template["_tvp", k, "target_x"]=self.path_data[' x_m'][(self.index+k)%self.path_length]
-            template["_tvp", k, "target_y"] =self.path_data[' y_m'][(self.index+k)%self.path_length]
+            i=(self.index+k)%self.path_length
+            template["_tvp", k, "target_x"]=self.path_data[' x_m'][i]
+            template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
+            target_x_list.append(self.path_data_x[i])
+            target_y_list.append(self.path_data_y[i])
         
         if self.add_markers:
-            vis_point=visualiser.TargetMarker(self.path_data_x[(self.index+self.n_horizon)%self.path_length], self.path_data_y[(self.index+self.n_horizon)%self.path_length], 1)
+            vis_point=visualiser.TargetMarker(target_x_list, target_y_list, 1)
             
             #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
             vis_point.draw_point()

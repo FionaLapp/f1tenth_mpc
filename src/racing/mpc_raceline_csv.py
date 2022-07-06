@@ -26,9 +26,9 @@ import mpc_base_code as mpc_base_code
 class ReadCSVController(mpc_base_code.BaseController):
     """ 
     """
-    def __init__(self):
+    def __init__(self, max_speed=None):
         self.read_desired_path()
-        super().__init__()
+        super().__init__(max_speed=max_speed)
         
         
         
@@ -82,7 +82,7 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =ReadCSVController()
+    model_predictive_control =ReadCSVController(max_speed=3)
     rospy.sleep(0.1)
     rospy.spin()
 

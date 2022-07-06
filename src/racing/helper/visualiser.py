@@ -60,8 +60,13 @@ class VisMarker(ABC):
 class TargetMarker(VisMarker):
     def __init__(self, x:float, y:float, duration:float):
         super().__init__(x, y, duration)
-        self.marker.type = self.marker.SPHERE_LIST
-
+        try:
+            if len(x)>1:
+                self.marker.type = self.marker.SPHERE_LIST
+            else:
+                self.marker.type = self.marker.SPHERE
+        except Exception:
+            self.marker.type = self.marker.SPHERE
         
         #this seems to be a bit pointless because the colour is actually decided in the simulator.rviz file but if I leave it out it doesn't show up
         self.marker.color.r = 255

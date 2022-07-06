@@ -51,6 +51,8 @@ class ReadCSVController(mpc_base_code.BaseController):
         self.previous_y=0
         self.distance_travelled=0.0
         self.index=0
+
+        #the following code was just me trying to compute splines instead of only having  points and connecting them with lines. probably unecessary
         self.use_splines=use_splines
         if use_splines:
             spline=interpolate.SmoothBivariateSpline(self.path_data_x, self.path_data_y, self.path_data_s) 
@@ -104,7 +106,7 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =ReadCSVController(max_speed=2, use_splines=True)
+    model_predictive_control =ReadCSVController(max_speed=2, use_splines=False)
     rospy.sleep(0.1)
     rospy.spin()
 
