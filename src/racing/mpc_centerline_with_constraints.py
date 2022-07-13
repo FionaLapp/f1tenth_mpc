@@ -87,7 +87,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             y=data.pose.pose.position.y
             orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
             (roll, pitch, phi) = euler_from_quaternion (orientation_list)
-            #rospy.loginfo("{}, {}, {}".format(x, y, phi))
+            rospy.loginfo("{}, {}, {}".format(x, y, phi))
             self.state= np.array([x,y, phi])
             
             #update target: find the point on the centerline fiile closest to the current position, then go two further

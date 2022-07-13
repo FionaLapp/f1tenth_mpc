@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-
   <!-- Launch a map from the maps folder-->
   <arg name="map" default="$(find f1tenth_mpc)/src/maps/Sochi/Sochi_map.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
@@ -50,20 +49,24 @@
 		}
 	}'" />
 	
-  <node pkg="f1tenth_mpc" name="mpc" type="mpc_centerline_with_constraints.py" output="screen">
+  
+  <node pkg="f1tenth_mpc" name="mpc" type="mpc_centerline_with_constraints.py" output="screen"
+  launch-prefix="pprofile --format callgrind --out 'callgrind.test.%p' " 
+  >
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
   	  <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	 
      </node> 
 
-  <!-- Launch RVIZ -->
+  <!-- Launch RVIZ 
+  
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>
-   
-    <!-- Launch Hector trajectory server -->
+   -->
+    <!-- Launch Hector trajectory server 
     <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
    	<rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
-  	 </node> 
+  	 </node> -->
     
   	 
 </launch>
