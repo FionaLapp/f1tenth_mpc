@@ -50,7 +50,9 @@
 		}
 	}'" />
 	
-  <node pkg="f1tenth_mpc" name="mpc" type="mpc_constraints_with_lidar.py" output="screen">
+  <node pkg="f1tenth_mpc" name="mpc" type="mpc_constraints_with_lidar.py" output="screen"
+  launch-prefix="pprofile --format callgrind --out 'callgrind.test.%p' " 
+  >
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
   	  <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	 
