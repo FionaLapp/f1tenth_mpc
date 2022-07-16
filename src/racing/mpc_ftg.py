@@ -50,7 +50,7 @@ class FTGController(mpc_base_code.BaseController):
         super().setup_node()
         if max_speed is None:
             max_speed=self.params['max_speed']
-        super().setup_mpc(max_speed=max_speed)
+        super().setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'])
         self.setup_finished=True
         
         
@@ -191,7 +191,7 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =FTGController(max_speed=3, max_range=4, bubble_radius=10, threshold=4)
+    model_predictive_control =FTGController(max_speed=None, max_range=4, bubble_radius=10, threshold=4)
     rospy.sleep(0.1)
     rospy.spin()
 

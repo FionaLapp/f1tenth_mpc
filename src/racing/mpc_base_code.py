@@ -41,7 +41,7 @@ class BaseController(ABC):
         self.setup_node()
         if max_speed is None:
             max_speed=self.params['max_speed']
-        self.setup_mpc(max_speed=max_speed)
+        self.setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'])
         self.setup_finished=True
         
        
@@ -94,7 +94,7 @@ class BaseController(ABC):
         params['directory']=rospy.get_param(namespace+'directory')
         params['ftg_safety_raduis']=rospy.get_param(namespace+'ftg_safety_raduis')
         params['center_to_wall_distance']=rospy.get_param(namespace+'center_to_wall_distance')
-        
+        params['n_horizon']=rospy.get_param(namespace+'n_horizon', 5)
         return params    
 
     def make_mpc_step(self, x_state):
@@ -140,7 +140,7 @@ class BaseController(ABC):
         pass
         
 
-    def setup_mpc(self, max_speed, n_horizon=5):
+    def setup_mpc(self, max_speed, n_horizon):
         rospy.loginfo("setting up MPC")
         model_type = 'continuous' # either 'discrete' or 'continuous'
         self.model = Model(model_type)
