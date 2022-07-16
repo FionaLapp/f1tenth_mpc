@@ -8,8 +8,7 @@ from cgi import print_directory
 import sys
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib
+
 
 
 #MPC imports
@@ -22,7 +21,6 @@ import casadi
 # Import do_mpc package:
 from do_mpc.model import Model
 from do_mpc.controller import MPC
-from do_mpc.graphics import Graphics
 
 #ROS Imports
 import rospy
@@ -297,63 +295,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         return template   
 
     
-    def plot_mpc(self, event):
-        # self.configure_graphics()
-        # self._plotter.plot_results()
-        # self._plotter.reset_axes()
-        # plt.show()
 
-        # data_array=self.controller.data['_x']
-        # print(data_array)
-        # x_data=data_array[:,0]
-        # y_data=data_array[:,1]
-
-        # fig = plt.figure(figsize=(10,5))
-
-        # plt.plot(x_data, y_data)
-        # plt.xlabel('x position')
-        # plt.ylabel('y position')
-        # title="vehicle_path".format()
-        # plt.title(title)
-        # plt.show()
-
-        self.configure_graphics()
-        self._plotter.plot_results()
-        self._plotter.reset_axes()
-        plt.show()
-        #filepath=self.params['directory']+"/plots/"+title + str(event.current_real)
-        #fig.savefig(filepath, bbox_inches='tight', dpi=150)
-        
-    def configure_graphics(self):
-        """
-        Matplotlib-based plotter and connect relevant data points to it.
-        Additional styling is added for more pleasing visuals and can be extended for custom plotting.
-        this function was copied from https://github.com/TheCodeSummoner/f1tenth-racing-algorithms
-        """
-        rospy.loginfo("Configuring graphics")
-        self._plotter = Graphics(self.controller.data)
-
-        # Add some nice styling
-        matplotlib.rcParams["font.size"] = 18
-        matplotlib.rcParams["lines.linewidth"] = 3
-        matplotlib.rcParams["axes.grid"] = True
-
-        # Create the figure and the axis
-        figure, axis = plt.subplots(3, sharex="all", figsize=(16, 9))
-        figure.align_ylabels()
-
-        # Draw relevant state and inputs
-        self._plotter.add_line(var_type="_x", var_name="x", axis=axis[0], color="green")
-        self._plotter.add_line(var_type="_x", var_name="y", axis=axis[0], color="blue")
-        self._plotter.add_line(var_type="_x", var_name="phi", axis=axis[1], color="red")
-        self._plotter.add_line(var_type="_u", var_name="delta", axis=axis[1], color="green")
-        self._plotter.add_line(var_type="_u", var_name="v", axis=axis[2], color="red")
-
-        # Set X and Y labels
-        axis[0].set_ylabel("Position")
-        axis[1].set_ylabel("Angles")
-        axis[2].set_ylabel("Velocity")
-        axis[2].set_xlabel("Time")
 
   
 def main(args):
@@ -363,8 +305,8 @@ def main(args):
     rospy.loginfo("starting up mpc node")
     
     model_predictive_control =ControllerWithConstraints(max_speed=5, add_markers=True)
-    #uncomment beloow to create mpc graph
-    #rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
+    #uncomment below to create mpc graph
+    rospy.Timer(rospy.Duration(10), model_predictive_control.plot_mpc)
     rospy.sleep(0.1)
     rospy.spin()
     
