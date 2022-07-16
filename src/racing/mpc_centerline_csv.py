@@ -77,10 +77,8 @@ class ReadCSVController(mpc_base_code.BaseController):
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         """
         try:#update current state
-            g=GapMarker(self.out[0],self.out[1])
-            g.draw_point()
-            self.previous_x=self.state[0]
-            self.previous_y=self.state[1]
+            # g=GapMarker(self.out[0],self.out[1])
+            # g.draw_point()
             x=data.pose.pose.position.x
             y=data.pose.pose.position.y
             orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
@@ -106,7 +104,7 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =ReadCSVController(max_speed=2, use_splines=False)
+    model_predictive_control =ReadCSVController(max_speed=5, use_splines=False)
     rospy.sleep(0.1)
     rospy.spin()
 
