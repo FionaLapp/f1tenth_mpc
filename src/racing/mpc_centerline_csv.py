@@ -49,6 +49,7 @@ class ReadCSVController(mpc_base_code.BaseController):
         self.path_data_s= np.cumsum(delta_s)                                    
         self.previous_x=0
         self.previous_y=0
+        self.previous_delta=0
         self.distance_travelled=0.0
         self.index=0
 
@@ -77,8 +78,8 @@ class ReadCSVController(mpc_base_code.BaseController):
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         """
         try:#update current state
-            # g=GapMarker(self.out[0],self.out[1])
-            # g.draw_point()
+            
+            self.previous_delta=self.state[2]
             x=data.pose.pose.position.x
             y=data.pose.pose.position.y
             orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]

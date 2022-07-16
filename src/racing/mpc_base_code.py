@@ -163,13 +163,15 @@ class BaseController(ABC):
         self.target_x=self.model.set_variable(var_type='_tvp', var_name='target_x', shape=(1,1))
         self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
         
+
+        self.v_delta=self.model.set_variable(var_type='_tvp', var_name='v_delta', shape=(1,1))
+        
         #differential equations
 
         slip_factor = self.model.set_expression('slip_factor', casadi.arctan(l_r * casadi.tan(self.delta) /self.params['wheelbase']))
         dx_dt= self.v * casadi.cos(self.phi + slip_factor)
         dy_dt= self.v * casadi.sin(self.phi + slip_factor)
         dphi_dt=self.v * casadi.tan(self.delta)* casadi.cos(slip_factor) / self.params['wheelbase']
-
         self.model.set_rhs('x', dx_dt)
         self.model.set_rhs('y', dy_dt)
         self.model.set_rhs('phi', dphi_dt)
@@ -233,6 +235,9 @@ class BaseController(ABC):
             template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
             target_x_list.append(self.path_data_x[i])
             target_y_list.append(self.path_data_y[i])
+
+            template["_tvp", k, "v_delta"] =(self.delta-self.previous_delta)**2
+            
         
         if self.add_markers:
             vis_point=visualiser.TargetMarker(target_x_list, target_y_list, 1)
@@ -251,7 +256,7 @@ class BaseController(ABC):
         """
         none
         """
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 #+ self.v_delta*self.v
 
     @property
     def terminal_cost(self):

@@ -36,6 +36,7 @@ class FTGController(mpc_base_code.BaseController):
         self.setup_laser_scan()
         self.t_x=0
         self.t_y=0
+        self.previous_delta=0
         self.state=[0,0,0]
         if max_range<threshold:
             raise Exception("max range needs to be greater or equal threshold")
@@ -66,6 +67,8 @@ class FTGController(mpc_base_code.BaseController):
         if self.setup_finished:#update current state
             self.previous_x=self.state[0]
             self.previous_y=self.state[1]
+
+            self.previous_delta=self.state[2]
             x=data.pose.pose.position.x
             y=data.pose.pose.position.y
             orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]

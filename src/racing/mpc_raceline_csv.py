@@ -43,6 +43,7 @@ class ReadCSVController(mpc_base_code.BaseController):
         self.path_data_y=self.path_data[' y_m'].to_numpy()                                            
         self.previous_x=0
         self.previous_y=0
+        self.previous_delta=0
         self.distance_travelled=0.0
         self.index=0
     
@@ -59,6 +60,7 @@ class ReadCSVController(mpc_base_code.BaseController):
             #update current state
             self.previous_x=self.state[0]
             self.previous_y=self.state[1]
+            self.previous_delta=self.state[2]
             x=data.pose.pose.position.x
             y=data.pose.pose.position.y
             orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]

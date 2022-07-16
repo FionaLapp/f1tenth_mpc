@@ -54,6 +54,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.path_data_y=self.path_data[' y_m'].to_numpy()                                            
         self.previous_x=0
         self.previous_y=0
+        self.previous_delta=0
         self.distance_travelled=0.0
         self.index=0
         self.trackwidth=self.params['center_to_wall_distance']-0.1 # thee 0.1 is a random number I decided on for safety
@@ -81,6 +82,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         try:#update current state
             self.previous_x=self.state[0]
             self.previous_y=self.state[1]
+            self.previous_delta=self.state[2]
             x=data.pose.pose.position.x
             y=data.pose.pose.position.y
             orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
@@ -126,6 +128,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.constraint_p_x_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_p_x_upper', shape=(1,1))
         self.constraint_p_y_lower=self.model.set_variable(var_type='_tvp', var_name='constraint_p_y_lower', shape=(1,1))
         self.constraint_p_y_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_p_y_upper', shape=(1,1))
+        
+
+        self.v_delta=self.model.set_variable(var_type='_tvp', var_name='v_delta', shape=(1,1))
         
         #self.lower_x=self.model.set_variable(var_type='_tvp', var_name='lower_x', shape=(1,1))
         #self.lower_y=self.model.set_variable(var_type='_tvp', var_name='lower_y', shape=(1,1))
@@ -267,6 +272,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
                 template["_tvp", k, "constraint_p_x_lower"] = p_x_lower
                 template["_tvp", k, "constraint_p_y_upper"] = p_y_upper
                 template["_tvp", k, "constraint_p_y_lower"] = p_y_lower
+
+                template["_tvp", k, "v_delta"] =(self.delta-self.previous_delta)**2
+                print((self.delta-self.previous_delta)**2)
             # try:
             #     print(self.controller.nlp_cons)
 
@@ -306,7 +314,7 @@ def main(args):
     
     model_predictive_control =ControllerWithConstraints(max_speed=5, add_markers=True)
     #uncomment below to create mpc graph
-    rospy.Timer(rospy.Duration(10), model_predictive_control.plot_mpc)
+    #rospy.Timer(rospy.Duration(10), model_predictive_control.plot_mpc)
     rospy.sleep(0.1)
     rospy.spin()
     
