@@ -54,6 +54,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.path_data_y=self.path_data[' y_m'].to_numpy()                                            
         self.previous_x=0
         self.previous_y=0
+        self.double_previous_delta=0
         self.previous_delta=0
         self.distance_travelled=0.0
         self.index=0
@@ -73,13 +74,15 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.path_data_x_l=self.path_data_x-self.path_tangent_y*self.trackwidth/l
         self.path_data_y_l=self.path_data_y+self.path_tangent_x*self.trackwidth/l
         
-
+    def calculate_curvature(self):
+        pass
 
     def localisation_callback(self, data:Odometry):
         """
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         """
         try:#update current state
+            self.double_previous_delta=self.previous_delta
             self.previous_x=self.state[0]
             self.previous_y=self.state[1]
             self.previous_delta=self.state[2]
@@ -130,7 +133,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.constraint_p_y_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_p_y_upper', shape=(1,1))
         
 
-        self.v_delta=self.model.set_variable(var_type='_tvp', var_name='v_delta', shape=(1,1))
+        self.previous_delta=self.model.set_variable(var_type='_tvp', var_name='previous_delta', shape=(1,1))
         
         #self.lower_x=self.model.set_variable(var_type='_tvp', var_name='lower_x', shape=(1,1))
         #self.lower_y=self.model.set_variable(var_type='_tvp', var_name='lower_y', shape=(1,1))
@@ -273,8 +276,8 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
                 template["_tvp", k, "constraint_p_y_upper"] = p_y_upper
                 template["_tvp", k, "constraint_p_y_lower"] = p_y_lower
 
-                template["_tvp", k, "v_delta"] =(self.delta-self.previous_delta)**2
-                print((self.delta-self.previous_delta)**2)
+                template["_tvp", k, "previous_delta"] =self.previous_delta
+               
             # try:
             #     print(self.controller.nlp_cons)
 

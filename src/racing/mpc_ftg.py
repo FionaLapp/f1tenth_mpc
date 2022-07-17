@@ -29,7 +29,7 @@ import helper.visualiser as visualiser
 class FTGController(mpc_base_code.BaseController):
     """ 
     """
-    def __init__(self, add_markers=True, max_speed=None, max_range=2, bubble_radius=10, threshold=2):
+    def __init__(self, add_markers=True, max_speed=None, max_range=1, bubble_radius=10, threshold=1):
         self.params=super().get_params()
         self.setup_finished=False
         self.add_markers=add_markers
@@ -89,8 +89,8 @@ class FTGController(mpc_base_code.BaseController):
         kernel_size = 4
         kernel = np.ones(kernel_size) / kernel_size
         ranges_convolved = np.convolve(ranges, kernel, mode='same') #averaging over every 4 elements
-        proc_ranges = np.where(ranges_convolved<=self.max_range, ranges_convolved, self.max_range) #set everything larger than max_range to max_range
-        return proc_ranges
+        cutoff_ranges = np.where(ranges_convolved<=self.max_range, ranges_convolved, self.max_range) #set everything larger than max_range to max_range
+        return ranges_convolved, cutoff_ranges
 
     def find_max_gap(self, ranges):
         """ Return the start index & end index of the max gap in free_space_ranges
@@ -118,15 +118,15 @@ class FTGController(mpc_base_code.BaseController):
         #furthest_point_index=np.argmax(gap_array)+start_i
         #return  furthest_point_index
 
-    def lidar_to_xy(self, index):
+    def lidar_to_xy(self, index, ranges):
         if self.lidar_data is None:
             raise Warning("no laser data provided")
         else:
             laser_angle = (index * self.angle_increment) + self.angle_min 
             heading_angle=self.state[2]
             point_angle = laser_angle + heading_angle
-            p_x = self.proc_ranges[index] * np.cos(point_angle) + self.state[0] +0.265*np.cos(heading_angle)
-            p_y =self.proc_ranges[index]  * np.sin(point_angle) + self.state[1] +0.265*np.sin(heading_angle)
+            p_x = ranges[index] * np.cos(point_angle) + self.state[0] +0.265*np.cos(heading_angle)
+            p_y =ranges[index]  * np.sin(point_angle) + self.state[1] +0.265*np.sin(heading_angle)
             return p_x, p_y
         
 
@@ -138,28 +138,34 @@ class FTGController(mpc_base_code.BaseController):
         self.lidar_data=data
 
     def process_lidar_data(self):
-        self.proc_ranges = self.preprocess_lidar(self.lidar_data.ranges)
+        self.uncut_ranges, self.cutoff_ranges = self.preprocess_lidar(self.lidar_data.ranges)
         
         #Find closest point to LiDAR #TODO this needs work
-        #closest_point_index=np.argmin(self.proc_ranges) 
+        #closest_point_index=np.argmin(self.cutoff_ranges) 
         #Eliminate all points inside 'bubble' (set them to zero) #TODO this needs work
-        #self.proc_ranges[closest_point_index-self.bubble_radius:closest_point_index+self.bubble_radius]=0
+        #self.cutoff_ranges[closest_point_index-self.bubble_radius:closest_point_index+self.bubble_radius]=0
  
         #Find max length gap 
-        start_index, end_index=self.find_max_gap(self.proc_ranges)
+        start_index, end_index=self.find_max_gap(self.cutoff_ranges)
         
 
         #Find the best point in the gap 
-        best_point_index=self.find_best_point_index(start_index, end_index, self.proc_ranges)
+        best_point_index=self.find_best_point_index(start_index, end_index, self.cutoff_ranges)
+        
         
         #calculate x and y value, given the index of the lidar point
-        self.t_x, self.t_y=self.lidar_to_xy(best_point_index)
+        self.t_x, self.t_y=self.lidar_to_xy(best_point_index, self.cutoff_ranges)
         gap_x_array=[]
         gap_y_array=[]
         for i in range(start_index, end_index):
-            temp_x, temp_y=self.lidar_to_xy(i)
+            temp_x, temp_y=self.lidar_to_xy(i, self.cutoff_ranges)
             gap_x_array.append(temp_x)
             gap_y_array.append(temp_y)
+
+        self.wall_ahead_x, self.wall_ahead_y=self.lidar_to_xy(best_point_index, self.uncut_ranges)
+        self.distance_to_wall_ahead=(self.state[0]-self.wall_ahead_x)**2+(self.state[1]-self.wall_ahead_y)**2
+        #print(self.distance_to_wall_ahead)
+        
         if not len(gap_x_array)==0:   #if the list is empty, just stick to the old target points 
             
             
@@ -185,6 +191,7 @@ class FTGController(mpc_base_code.BaseController):
             
             template["_tvp", k, "target_x"]=self.t_x
             template["_tvp", k, "target_y"] =self.t_y
+            
         
         return template     
   
@@ -195,6 +202,8 @@ def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
     model_predictive_control =FTGController(max_speed=None, max_range=4, bubble_radius=10, threshold=4)
+    rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
+    
     rospy.sleep(0.1)
     rospy.spin()
 

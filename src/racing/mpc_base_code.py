@@ -163,8 +163,9 @@ class BaseController(ABC):
         self.target_x=self.model.set_variable(var_type='_tvp', var_name='target_x', shape=(1,1))
         self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
         
-
-        self.v_delta=self.model.set_variable(var_type='_tvp', var_name='v_delta', shape=(1,1))
+        self.wall_distance=self.model.set_variable(var_type='_tvp', var_name='pwall_distance', shape=(1,1))
+        
+        self.previous_delta=self.model.set_variable(var_type='_tvp', var_name='previous_delta', shape=(1,1))
         
         #differential equations
 
@@ -205,7 +206,7 @@ class BaseController(ABC):
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=1)
         self.controller.set_rterm(delta=1)
-
+        
         self.controller.setup()
 
         x_0 = 0
@@ -235,8 +236,10 @@ class BaseController(ABC):
             template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
             target_x_list.append(self.path_data_x[i])
             target_y_list.append(self.path_data_y[i])
-
-            template["_tvp", k, "v_delta"] =(self.delta-self.previous_delta)**2
+            
+            #template["_tvp", k, "wall_distance"] =self.distance_to_wall_ahead
+            
+            template["_tvp", k, "previous_delta"] =self.previous_delta
             
         
         if self.add_markers:
@@ -245,6 +248,7 @@ class BaseController(ABC):
             #vis_point=visualiser.TargetMarker(self.path_data_x[self.index:self.index+self.n_horizon], self.path_data_y[self.index:self.index+self.n_horizon], 1)
             vis_point.draw_point()
         #rospy.loginfo("template prepared with goal (x,y)= ({}, {})".format(self.goal_x, self.goal_y))    
+        
         return template    
 
         
@@ -256,8 +260,8 @@ class BaseController(ABC):
         """
         none
         """
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 #+ self.v_delta*self.v
-
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 #+self.delta*self.v #+(200/self.wall_distance)*self.v
+        
     @property
     def terminal_cost(self):
         """
@@ -290,7 +294,7 @@ class BaseController(ABC):
         fig=self.configure_graphics()
         self._plotter.plot_results()
         self._plotter.reset_axes()
-        #plt.show()
+        plt.show()
         title="parameter_plot"
         directory=self.params['directory']+ "/src/figures/"
         filepath=os.path.expanduser(directory+title + str(event.current_real)+".png")
