@@ -38,6 +38,7 @@ class FTGController(mpc_base_code.BaseController):
         self.t_x=0
         self.t_y=0
         self.previous_delta=0
+        self.distance_to_wall_ahead=1000 # a large number
         self.state=[0,0,0]
         if max_range<threshold:
             raise Exception("max range needs to be greater or equal threshold")
@@ -196,9 +197,8 @@ class FTGController(mpc_base_code.BaseController):
             template["_tvp", k, "target_y"] =self.t_y
 
             template["_tvp", k, "measured_steering_angle"] =self.current_steering_angle
+            template["_tvp", k, "wall_distance"] =self.distance_to_wall_ahead
             
-            
-        
         return template     
   
 
@@ -208,7 +208,7 @@ def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
     model_predictive_control =FTGController(max_speed=None, max_range=4, bubble_radius=10, threshold=4)
-    rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
+    #rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
     
     rospy.sleep(0.1)
     rospy.spin()

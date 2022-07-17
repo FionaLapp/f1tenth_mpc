@@ -165,7 +165,7 @@ class BaseController(ABC):
         self.target_x=self.model.set_variable(var_type='_tvp', var_name='target_x', shape=(1,1))
         self.target_y=self.model.set_variable(var_type='_tvp', var_name='target_y', shape=(1,1))
         
-        self.wall_distance=self.model.set_variable(var_type='_tvp', var_name='pwall_distance', shape=(1,1))
+        self.wall_distance=self.model.set_variable(var_type='_tvp', var_name='wall_distance', shape=(1,1))
         
         self.measured_steering_angle=self.model.set_variable(var_type='_tvp', var_name='measured_steering_angle', shape=(1,1))
         
@@ -261,7 +261,8 @@ class BaseController(ABC):
         """
         none
         """
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
+        #return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +(5/self.wall_distance)*self.v**2 #+(200/self.wall_distance)*self.v
         
     @property
     def terminal_cost(self):
