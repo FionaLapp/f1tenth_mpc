@@ -41,6 +41,7 @@ class BaseController(ABC):
     """
     def __init__(self, max_speed=None, add_markers=True):
         self.setup_finished=False
+        self.current_steering_angle=0
         self.add_markers=add_markers
         self.params=self.get_params()
         self.setup_node()
@@ -119,8 +120,9 @@ class BaseController(ABC):
             
         #sending control input to /drive topic
         delta=u[0]
+        self.current_steering_angle=delta
         v=u[1]
-
+        rospy.loginfo("{}, {}".format(u[0], u[1]))
         #setup drive message
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()
@@ -165,7 +167,7 @@ class BaseController(ABC):
         
         self.wall_distance=self.model.set_variable(var_type='_tvp', var_name='pwall_distance', shape=(1,1))
         
-        self.previous_delta=self.model.set_variable(var_type='_tvp', var_name='previous_delta', shape=(1,1))
+        self.measured_steering_angle=self.model.set_variable(var_type='_tvp', var_name='measured_steering_angle', shape=(1,1))
         
         #differential equations
 
@@ -239,9 +241,8 @@ class BaseController(ABC):
             
             #template["_tvp", k, "wall_distance"] =self.distance_to_wall_ahead
             
-            template["_tvp", k, "previous_delta"] =self.previous_delta
-            
-        
+            template["_tvp", k, "measured_steering_angle"] =self.current_steering_angle
+            #print("phi:{}".format(self.state[2]))
         if self.add_markers:
             vis_point=visualiser.TargetMarker(target_x_list, target_y_list, 1)
             
@@ -260,7 +261,7 @@ class BaseController(ABC):
         """
         none
         """
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 #+self.delta*self.v #+(200/self.wall_distance)*self.v
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
         
     @property
     def terminal_cost(self):

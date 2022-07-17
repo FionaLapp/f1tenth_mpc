@@ -31,6 +31,7 @@ class FTGController(mpc_base_code.BaseController):
     """
     def __init__(self, add_markers=True, max_speed=None, max_range=1, bubble_radius=10, threshold=1):
         self.params=super().get_params()
+        self.current_steering_angle=0
         self.setup_finished=False
         self.add_markers=add_markers
         self.setup_laser_scan()
@@ -74,8 +75,10 @@ class FTGController(mpc_base_code.BaseController):
             orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
             (roll, pitch, phi) = euler_from_quaternion (orientation_list)
             #rospy.loginfo("{}, {}, {}".format(x, y, phi))
+            
             self.state= np.array([x,y, phi])
             self.make_mpc_step(self.state)
+            
         else:
             rospy.logdebug("Initialisation not finished")
     
@@ -191,6 +194,9 @@ class FTGController(mpc_base_code.BaseController):
             
             template["_tvp", k, "target_x"]=self.t_x
             template["_tvp", k, "target_y"] =self.t_y
+
+            template["_tvp", k, "measured_steering_angle"] =self.current_steering_angle
+            
             
         
         return template     
