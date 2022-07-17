@@ -90,14 +90,20 @@ class ReadCSVController(mpc_base_code.BaseController):
             #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
             
-            self.index=distances_to_current_point.argmin()+ 2 %len(self.path_data_x)
+            self.index=distances_to_current_point.argmin()+ 11 %len(self.path_data_x)
             #rospy.loginfo(self.index)
             self.make_mpc_step(self.state)
         except AttributeError:
             print("Initialisation not finished")
 
     
-        
+    @property
+    def stage_cost(self):
+        """
+        none
+        """
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 #+13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
+         
   
 
 def main(args):
@@ -105,7 +111,7 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =ReadCSVController(max_speed=5, use_splines=False)
+    model_predictive_control =ReadCSVController(max_speed=None, use_splines=False)
     rospy.sleep(0.1)
     rospy.spin()
 

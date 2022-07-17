@@ -211,7 +211,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         target_marker_list_x=[]
         target_marker_list_y=[]
         for k in range(self.n_horizon + 1):
-            i=(self.index+k)%self.path_length
+            i=(self.index+2*k)%self.path_length
             template["_tvp", k, "target_x"]=self.path_data[' x_m'][i]
             template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
             #vector equation of line
@@ -306,7 +306,13 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         return template   
 
     
-
+    @property
+    def stage_cost(self):
+        """
+        none
+        """
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 #+13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
+     
 
   
 def main(args):
@@ -315,7 +321,7 @@ def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
     
-    model_predictive_control =ControllerWithConstraints(max_speed=5, add_markers=True)
+    model_predictive_control =ControllerWithConstraints(max_speed=6, add_markers=True)
     #uncomment below to create mpc graph
     #rospy.Timer(rospy.Duration(10), model_predictive_control.plot_mpc)
     rospy.sleep(0.1)
