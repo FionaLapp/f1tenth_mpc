@@ -2,11 +2,11 @@
 <launch>
 
   <!-- Launch a map from the maps folder-->
-  <arg name="map" default="$(find f1tenth_mpc)/src/maps/Sochi/Sochi_map.yaml"/>
+  <arg name="map" default="$(find f1tenth_mpc)/src/maps/Austin/Austin_map.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
 
   <!-- Launch the racecar model -->
-  <include file="$(find f1tenth_simulator)/launch/racecar_model.launch"/>
+  <include file="$(find f1tenth_mpc)/src/launch/racecar_model.launch"/>
 
   <!-- Begin the simulator with the parameters from params.yaml -->
   <node pkg="f1tenth_simulator" name="f1tenth_simulator" type="simulator" output="screen">
