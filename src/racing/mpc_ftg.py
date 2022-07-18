@@ -29,7 +29,7 @@ import helper.visualiser as visualiser
 class FTGController(mpc_base_code.BaseController):
     """ 
     """
-    def __init__(self, add_markers=True, max_speed=None, max_range=1, bubble_radius=10, threshold=1, time_step=0.1):
+    def __init__(self, add_markers=True, max_speed=None, threshold=4, time_step=0.1):
         self.params=super().get_params()
         self.current_steering_angle=0
         self.setup_finished=False
@@ -40,10 +40,7 @@ class FTGController(mpc_base_code.BaseController):
         self.previous_delta=0
         self.distance_to_wall_ahead=1000 # a large number
         self.state=[0,0,0]
-        if max_range<threshold:
-            raise Exception("max range needs to be greater or equal threshold")
-        self.max_range=max_range
-        self.bubble_radius=bubble_radius
+        self.max_range=threshold
         self.threshold=threshold
         self.cutoff_per_side=150 #so the target point isn't right behind the car
         self.angle_increment=0.005823155865073204 #can I get this from some param file? probably. would that be cleaner? certainly. Will I bother? Doesn't look likely
@@ -93,8 +90,7 @@ class FTGController(mpc_base_code.BaseController):
         kernel_size = 4
         kernel = np.ones(kernel_size) / kernel_size
         ranges_convolved = np.convolve(ranges, kernel, mode='same') #averaging over every 4 elements
-        cutoff_ranges = np.where(ranges_convolved<=self.max_range, ranges_convolved, self.max_range) #set everything larger than max_range to max_range
-        return ranges_convolved, cutoff_ranges
+        return ranges_convolved
 
     def find_max_gap(self, ranges):
         """ Return the start index & end index of the max gap in free_space_ranges
@@ -133,7 +129,16 @@ class FTGController(mpc_base_code.BaseController):
             p_y =ranges[index]  * np.sin(point_angle) + self.state[1] +0.265*np.sin(heading_angle)
             return p_x, p_y
         
-
+    def lidar_to_xy_range(self, start_index, end_index, ranges):
+        if self.lidar_data is None:
+            raise Warning("no laser data provided")
+        else:
+            laser_angle = (np.arange(start_index, end_index) * self.angle_increment) + self.angle_min 
+            heading_angle=self.state[2]
+            point_angle = laser_angle + heading_angle
+            p_x = ranges[start_index:end_index] * np.cos(point_angle) + self.state[0] +0.265*np.cos(heading_angle)
+            p_y =ranges[start_index:end_index]  * np.sin(point_angle) + self.state[1] +0.265*np.sin(heading_angle)
+            return p_x, p_y
 
     def lidar_callback(self, data:LaserScan):
         """ Process each LiDAR scan as per the Follow Gap algorithm & publish an AckermannDriveStamped Message
@@ -142,7 +147,8 @@ class FTGController(mpc_base_code.BaseController):
         self.lidar_data=data
 
     def process_lidar_data(self):
-        self.uncut_ranges, self.cutoff_ranges = self.preprocess_lidar(self.lidar_data.ranges)
+        self.uncut_ranges= self.preprocess_lidar(self.lidar_data.ranges)
+        self.cutoff_ranges = np.where(self.uncut_ranges<=self.max_range, self.uncut_ranges, self.threshold) #set everything larger than max_range to max_range
         
         #Find closest point to LiDAR #TODO this needs work
         #closest_point_index=np.argmin(self.cutoff_ranges) 
@@ -169,7 +175,13 @@ class FTGController(mpc_base_code.BaseController):
         self.wall_ahead_x, self.wall_ahead_y=self.lidar_to_xy(best_point_index, self.uncut_ranges)
         self.distance_to_wall_ahead=(self.state[0]-self.wall_ahead_x)**2+(self.state[1]-self.wall_ahead_y)**2
         #print(self.distance_to_wall_ahead)
-        
+        #self.threshold=0.01*self.distance_to_wall_ahead
+        points_per_side=int((end_index-start_index)/2)
+        avg_wall_ahead_x, avg_wall_ahead_y=self.lidar_to_xy_range(best_point_index-points_per_side, best_point_index+points_per_side+1, self.uncut_ranges)
+        avg_distance_to_wall_ahead=(self.state[0]-avg_wall_ahead_x)**2+(self.state[1]-avg_wall_ahead_y)**2
+        print("avg:{}, point:{}".format(np.mean(avg_distance_to_wall_ahead),self.distance_to_wall_ahead))
+        if self.distance_to_wall_ahead<=7*self.params['center_to_wall_distance']:
+            print("about_to_crash")
         if not len(gap_x_array)==0:   #if the list is empty, just stick to the old target points 
             
             
@@ -177,8 +189,6 @@ class FTGController(mpc_base_code.BaseController):
                 
                 gap_line=visualiser.GapMarker(gap_x_array, gap_y_array, 1)
                 gap_line.draw_point()
-                #a_x, a_y= self.lidar_to_xy(0)
-                #gap_point=visualiser.TargetMarker(a_x, a_y, 1)
                 gap_point=visualiser.TargetMarker(self.t_x, self.t_y, 1)
                 gap_point.draw_point()
             
@@ -208,10 +218,10 @@ def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
     time_step=0.1
-    model_predictive_control =FTGController(max_speed=None, max_range=4, bubble_radius=10, threshold=4, time_step=time_step)
+    model_predictive_control =FTGController(max_speed=None, threshold=4, time_step=time_step)
     #rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
     
-    rospy.sleep(time_step)
+    #rospy.sleep(time_step)
     rospy.spin()
 
 if __name__=='__main__':

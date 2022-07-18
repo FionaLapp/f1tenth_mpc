@@ -53,6 +53,19 @@ class ReadCSVController(mpc_base_code.BaseController):
         self.distance_travelled=0.0
         self.index=0
 
+        #first derivatives
+        dx=np.gradient(self.path_data_x)
+        dy=np.gradient(self.path_data_y)
+
+        #second derivatives 
+        d2x = np.gradient(dx)
+        d2y = np.gradient(dy)
+
+        #calculation of curvature 
+        self.curvature_array = np.abs(dx * d2y - d2x * dy) / (dx * dx + dy * dy)**1.5
+        
+        
+
         #the following code was just me trying to compute splines instead of only having  points and connecting them with lines. probably unecessary
         self.use_splines=use_splines
         if use_splines:
@@ -90,7 +103,7 @@ class ReadCSVController(mpc_base_code.BaseController):
             #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
             
-            self.index=distances_to_current_point.argmin()+ 11 %len(self.path_data_x)
+            self.index=distances_to_current_point.argmin()+ 6 %len(self.path_data_x)
             #rospy.loginfo(self.index)
             self.make_mpc_step(self.state)
         except AttributeError:
@@ -102,7 +115,7 @@ class ReadCSVController(mpc_base_code.BaseController):
         """
         none
         """
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 #+13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +2.3*self.curvature*self.v #+(200/self.wall_distance)*self.v
          
   
 

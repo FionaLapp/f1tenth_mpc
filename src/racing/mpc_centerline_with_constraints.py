@@ -66,14 +66,32 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         coordinates and either sign (so the dot prodict is 0), divide by length to get unit vector, multiply 
         by half the track width. add that vector to the original centerline point.
         """
-        self.path_tangent_x= self.path_data_x-np.roll(self.path_data_x, 1)
-        self.path_tangent_y= self.path_data_y-np.roll(self.path_data_y, 1)
+        self.path_tangent_x= np.gradient(self.path_data_x)#self.path_data_x-np.roll(self.path_data_x, 1)
+        self.path_tangent_y= np.gradient(self.path_data_y)#self.path_data_y-np.roll(self.path_data_y, 1)
         l=np.sqrt(self.path_tangent_x**2+self.path_tangent_y**2)
         self.path_data_x_r=self.path_data_x+self.path_tangent_y*self.trackwidth/l
         self.path_data_y_r=self.path_data_y-self.path_tangent_x*self.trackwidth/l
         self.path_data_x_l=self.path_data_x-self.path_tangent_y*self.trackwidth/l
         self.path_data_y_l=self.path_data_y+self.path_tangent_x*self.trackwidth/l
         
+        #first derivatives 
+        dx= np.gradient(self.path_data_x)
+        dy = np.gradient(self.path_data_y)
+        print(dx==self.path_tangent_x)
+        print(self.path_tangent_x[0:5])
+        print(dx[0:5])
+        #second derivatives 
+        d2x = np.gradient(dx)
+        d2y = np.gradient(dy)
+
+        #calculation of curvature from the typical formula
+        curvature = np.abs(dx * d2y - d2x * dy) / (dx * dx + dy * dy)**1.5
+        import matplotlib.pyplot as plt
+        plt.plot(curvature)
+        plt.show()
+
+
+
     def calculate_curvature(self):
         pass
 

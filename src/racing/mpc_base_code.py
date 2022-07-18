@@ -168,6 +168,7 @@ class BaseController(ABC):
         self.wall_distance=self.model.set_variable(var_type='_tvp', var_name='wall_distance', shape=(1,1))
         
         self.measured_steering_angle=self.model.set_variable(var_type='_tvp', var_name='measured_steering_angle', shape=(1,1))
+        self.curvature=self.model.set_variable(var_type='_tvp', var_name='curvature', shape=(1,1))
         
         #differential equations
 
@@ -242,6 +243,10 @@ class BaseController(ABC):
             #template["_tvp", k, "wall_distance"] =self.distance_to_wall_ahead
             
             template["_tvp", k, "measured_steering_angle"] =self.current_steering_angle
+            try:
+                template["_tvp", k, "curvature"] =self.curvature_array[i]
+            except Exception:
+                pass #ftg doesn't have curvature array
             #print("phi:{}".format(self.state[2]))
         if self.add_markers:
             vis_point=visualiser.TargetMarker(target_x_list, target_y_list, 1)
