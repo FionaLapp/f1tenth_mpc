@@ -39,8 +39,9 @@ class ControllerWithLidarConstraints(constraint_base_class):
     """ This controoller reads in the line data from the centerline file, 
     then callculates wall points for each centerline point using the track-with provided in the custom param file
     """
-    def __init__(self, max_speed=None, add_markers=True, max_range=3, bubble_radius=10, threshold=3):
+    def __init__(self, max_speed=None, add_markers=True, max_range=3, bubble_radius=10, threshold=3, time_step=0.1, n_horizon=5):
         self.setup_finished=False
+        self.time_step=time_step
         self.add_markers=add_markers
         self.params=super().get_params()
         super().read_desired_path()
@@ -63,7 +64,7 @@ class ControllerWithLidarConstraints(constraint_base_class):
         self.lidar_constraint_x_r=0
         self.lidar_constraint_y_l=0
         self.lidar_constraint_y_r=0
-        self.setup_mpc(max_speed=max_speed)
+        self.setup_mpc(max_speed=max_speed, time_step=time_step, n_horizon=n_horizon)
         
         self.setup_finished=True
         #super()().__init__(max_speed, add_markers)  
@@ -174,7 +175,7 @@ class ControllerWithLidarConstraints(constraint_base_class):
                 gap_line=visualiser.GapMarker(gap_x_array, gap_y_array, 1)
                 gap_line.draw_point()
                 
-    def setup_mpc(self, max_speed, n_horizon=5):
+    def setup_mpc(self, max_speed, n_horizon, time_step):
         rospy.loginfo("setting up MPC from child class")
         model_type = 'continuous' # either 'discrete' or 'continuous'
         self.model = Model(model_type)
@@ -241,7 +242,7 @@ class ControllerWithLidarConstraints(constraint_base_class):
         #optimiser parameters
         setup_mpc = {
             'n_horizon': self.n_horizon,
-            't_step': 0.1,
+            't_step': time_step,
             'n_robust': 1,
             'store_full_solution': True,
         }
@@ -408,8 +409,9 @@ class ControllerWithLidarConstraints(constraint_base_class):
 def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =ControllerWithLidarConstraints(max_speed=2, add_markers=True)
-    rospy.sleep(0.1)
+    time_step=0.1
+    model_predictive_control =ControllerWithLidarConstraints(max_speed=2, add_markers=True, time_step=time_step)
+    rospy.sleep(time_step)
     rospy.spin()
     
     

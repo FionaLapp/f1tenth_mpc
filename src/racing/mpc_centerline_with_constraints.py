@@ -33,7 +33,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
     """ This controoller reads in the line data from the centerline file, 
     then callculates wall points for each centerline point using the track-with provided in the custom param file
     """
-    def __init__(self, max_speed=None, add_markers=True):
+    def __init__(self, max_speed=None, add_markers=True, time_step=0.1):
         self.setup_finished=False
         self.add_markers=add_markers
         self.params=super().get_params()
@@ -42,7 +42,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         if max_speed is None:
             max_speed=self.params['max_speed']
         self.state=[0,0,0]
-        self.setup_mpc(max_speed=max_speed)
+        self.setup_mpc(max_speed=max_speed, time_step=time_step, n_horizon=self.params['n_horizon'])
         
         self.setup_finished=True
         
@@ -103,7 +103,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             rospy.loginfo("Initialisation not finished")
 
 
-    def setup_mpc(self, max_speed, n_horizon=5):
+    def setup_mpc(self, max_speed, time_step, n_horizon):
         rospy.loginfo("setting up MPC from child class")
         model_type = 'continuous' # either 'discrete' or 'continuous'
         self.model = Model(model_type)
@@ -320,11 +320,11 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    
-    model_predictive_control =ControllerWithConstraints(max_speed=6, add_markers=True)
+    time_step=0.1
+    model_predictive_control =ControllerWithConstraints(max_speed=6, add_markers=True, time_step=time_step)
     #uncomment below to create mpc graph
     #rospy.Timer(rospy.Duration(10), model_predictive_control.plot_mpc)
-    rospy.sleep(0.1)
+    rospy.sleep(time_step)
     rospy.spin()
     
     

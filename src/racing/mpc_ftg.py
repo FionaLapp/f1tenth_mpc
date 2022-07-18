@@ -29,7 +29,7 @@ import helper.visualiser as visualiser
 class FTGController(mpc_base_code.BaseController):
     """ 
     """
-    def __init__(self, add_markers=True, max_speed=None, max_range=1, bubble_radius=10, threshold=1):
+    def __init__(self, add_markers=True, max_speed=None, max_range=1, bubble_radius=10, threshold=1, time_step=0.1):
         self.params=super().get_params()
         self.current_steering_angle=0
         self.setup_finished=False
@@ -53,7 +53,7 @@ class FTGController(mpc_base_code.BaseController):
         super().setup_node()
         if max_speed is None:
             max_speed=self.params['max_speed']
-        super().setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'])
+        super().setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
         self.setup_finished=True
         
         
@@ -207,10 +207,11 @@ def main(args):
     
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
-    model_predictive_control =FTGController(max_speed=None, max_range=4, bubble_radius=10, threshold=4)
+    time_step=0.1
+    model_predictive_control =FTGController(max_speed=None, max_range=4, bubble_radius=10, threshold=4, time_step=time_step)
     #rospy.Timer(rospy.Duration(30), model_predictive_control.plot_mpc)
     
-    rospy.sleep(0.1)
+    rospy.sleep(time_step)
     rospy.spin()
 
 if __name__=='__main__':
