@@ -38,7 +38,9 @@ class ReadCSVController(mpc_base_code.BaseController):
        
 
     def read_desired_path(self, use_splines):
-        pathfile_name=rospy.get_param('/mpc/directory')+'/src/maps/Sochi/Sochi_centerline.csv'
+        print("Ns:{}".format(rospy.get_namespace()))
+        map_name=rospy.get_param(rospy.get_namespace()+'mpc/world_name')
+        pathfile_name=rospy.get_param(rospy.get_namespace()+'mpc/directory')+'/src/maps/'+map_name+'/'+map_name+'_centerline.csv'
         self.path_data=pd.read_csv(pathfile_name)
         self.path_length=self.path_data.shape[0]
         self.path_data_x=self.path_data[' x_m'].to_numpy()

@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <!-- Launch the racecar model -->
+  <group ns="car2">
+  <arg name="world_name"/>
+  <node pkg="rostopic" type="rostopic" name="rostopic" args="pub initialpose geometry_msgs/PoseWithCovarianceStamped '
+	{
+		header: {
+			frame_id: map
+		}, 
+		pose: {
+			pose: {
+				position: {
+					x: -14.728388250566763, 
+					y: 1.4781006884594134,
+					z: 0.0}, 
+				orientation: {
+					x: 0.0,
+					y: 0.0,
+					z: 0.520,
+					w:  0.854}
+			}
+		}
+	}'" />
+  <!-- Begin the simulator with the parameters from params.yaml -->
+  <node pkg="f1tenth_simulator" name="f1tenth_simulator" type="simulator" output="screen">
+    <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+    
+  </node>
+
+  <!-- Launch the mux node with the parameters from params.yaml -->
+  <node pkg="f1tenth_simulator" name="mux_controller" type="mux" output="screen">
+    <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+  </node>
+
+  <!-- Launch the behavior controller node with the parameters from params.yaml -->
+  <node pkg="f1tenth_simulator" name="behavior_controller" type="behavior_controller" output="screen">
+    <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+  </node>
+
+  <!-- Launch the Keyboard Node -->
+  <node pkg="f1tenth_simulator" name="keyboard" type="keyboard" output="screen">
+    <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+  </node>
+
+  <node pkg="f1tenth_mpc" name="mpc" type="mpc_centerline_csv.py" output="screen">
+          <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+  	  <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
+  	  <rosparam param="world_name" subst_value="True">$(arg world_name)</rosparam>
+     </node> 
+
+</group>
+   
+
+  	 
+</launch>

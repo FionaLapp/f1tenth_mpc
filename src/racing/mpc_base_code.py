@@ -72,7 +72,8 @@ class BaseController(ABC):
         #I quite possibly came up with the worst way to do this
         rospy.loginfo("Getting params")
         params={}
-        namespace='mpc/'
+        print("Ns:{}".format(rospy.get_namespace()))
+        namespace=rospy.get_namespace()+'mpc/'
         params['wheelbase']= rospy.get_param(namespace+'wheelbase', 0.3302) # meters
         params['width']= rospy.get_param(namespace+'width', 0.2032) # meters (width of racecar)
         params['buffer_length']= rospy.get_param(namespace+'buffer_length', 5) # steering delay
