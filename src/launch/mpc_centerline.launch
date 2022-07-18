@@ -1,13 +1,28 @@
 <?xml version="1.0"?>
 <launch>
-
-  <!-- Launch a map from the maps folder-->
-  <arg name="map" default="$(find f1tenth_mpc)/src/maps/Sochi/Sochi_map.yaml"/>
-  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
-
+  
   <!-- Launch the racecar model -->
-  <include file="$(find f1tenth_simulator)/launch/racecar_model.launch"/>
-
+  <group ns="car2">
+  <arg name="world_name"/>
+  <node pkg="rostopic" type="rostopic" name="rostopic" args="pub initialpose geometry_msgs/PoseWithCovarianceStamped '
+	{
+		header: {
+			frame_id: map
+		}, 
+		pose: {
+			pose: {
+				position: {
+					x: -14.728388250566763, 
+					y: 1.4781006884594134,
+					z: 0.0}, 
+				orientation: {
+					x: 0.0,
+					y: 0.0,
+					z: 0.520,
+					w:  0.854}
+			}
+		}
+	}'" />
   <!-- Begin the simulator with the parameters from params.yaml -->
   <node pkg="f1tenth_simulator" name="f1tenth_simulator" type="simulator" output="screen">
     <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
@@ -29,40 +44,14 @@
     <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
   </node>
 
-  <!-- Set initial position-->
-  <node pkg="rostopic" type="rostopic" name="rostopic" args="pub initialpose geometry_msgs/PoseWithCovarianceStamped '
-	{
-		header: {
-			frame_id: map
-		}, 
-		pose: {
-			pose: {
-				position: {
-					x: -14.728388250566763, 
-					y: 1.4781006884594134,
-					z: 0.0}, 
-				orientation: {
-					x: 0.0,
-					y: 0.0,
-					z: 0.520,
-					w:  0.854}
-			}
-		}
-	}'" />
-	
   <node pkg="f1tenth_mpc" name="mpc" type="mpc_centerline_csv.py" output="screen">
           <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
   	  <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
-  	 
+  	  <rosparam param="world_name" subst_value="True">$(arg world_name)</rosparam>
      </node> 
 
-  <!-- Launch RVIZ -->
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>
+</group>
    
-    <!-- Launch Hector trajectory server-->
-    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server">
-          <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
-   	<rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
-  	 </node> 
+
   	 
 </launch>
