@@ -45,18 +45,31 @@ RUN pip install numpy==1.16.0 \
                 llvmlite==0.31.0 \
                 numba==0.47.0
 
-RUN mkdir /f1tenth_gym
-COPY ./f1tenth_gym /f1tenth_gym
+#RUN mkdir /f1tenth_gym
+RUN git clone https://github.com/f1tenth/f1tenth_gym.git
+RUN cd f1tenth_gym
+RUN git checkout exp_py
+RUN pip3 install --user -e gym
+#COPY ./f1tenth_gym /f1tenth_gym
 
-RUN cd f1tenth_gym && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    make
+# RUN cd f1tenth_gym && \
+#     mkdir build && \
+#     cd build && \
+#     ls
 
-RUN cd f1tenth_gym && \
-    cp ./build/sim_requests_pb2.py ./gym/ && \
-    pip install -e gym/
+# RUN ls
+# RUN catkin_create_pkg f110_gym
+# #     cmake .. && \
+# #     make
+
+# RUN cd f1tenth_gym 
+# RUN git clone https://github.com/f1tenth/f1tenth_gym.git
+# cd f1tenth_gym
+# pip install -e .
+# #&& \
+# #     cp ./build/sim_requests_pb2.py ./gym/ && \
+# RUN     pip install -e gym
+
 
 RUN /bin/bash -c "source /opt/ros/melodic/setup.bash; mkdir -p catkin_ws/src; cd catkin_ws; catkin_make"
 
