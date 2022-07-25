@@ -56,8 +56,8 @@ class BaseController(ABC):
     def setup_node(self):
         #Topics & Subs, Pubs
         
-        localisation_topic= '/odom' #change to a different topic if applicable (e.g. if using hector)
-        drive_topic = '/nav'
+        localisation_topic= 'ego_racecar/odom' #change to a different topic if applicable (e.g. if using hector)
+        drive_topic = '/drive'
 
 
         self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)

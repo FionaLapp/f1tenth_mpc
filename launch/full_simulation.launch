@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <arg name="world_name" default= "Sochi"/>
+  <arg name="node_type" default="ftg"/>
+
+  <include file="$(find f1tenth_gym_ros)/launch/gym_bridge_launch.py"
+  pass_all_args="true"/>
+
+  <include file="$(find f1tenth_gym_ros)/src/racing/mpc_ftg.py"
+  pass_all_args="true"/>
+
+  <!-- Launch RVIZ -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>
+   
+  
+    
+  	 
+</launch>
