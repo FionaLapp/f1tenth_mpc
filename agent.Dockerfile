@@ -12,7 +12,8 @@ RUN apt-get install -y git \
                        cmake \
                        vim \
                        ros-noetic-ackermann-msgs \
-                       ros-noetic-genpy
+                       ros-noetic-genpy \
+                       python-catkin-tools
 
 # Upgrade pip
 # RUN pip install --upgrade pip
