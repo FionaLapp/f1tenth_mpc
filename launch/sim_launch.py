@@ -20,35 +20,40 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-version: '3'
-services:
-  sim:
-    image: f1tenth_gym_ros
-    volumes: 
-      - .:/sim_ws/src/f1tenth_gym_ros
-    environment:
-      - DISPLAY=novnc:0.0
-    networks:
-      - x11
-    stdin_open: true
-    tty: true 
-  novnc:  
-    image: theasp/novnc:latest
-    environment:
-      - DISPLAY_WIDTH=1728
-      - DISPLAY_HEIGHT=972
-    ports:
-      - "8080:8080"
-    networks:
-      - x11
-  agent1:
-    container_name: agent1
-    image: mpc_agent
-    build:
-      context: ./f1tenth_mpc
-    stdin_open: true
-    network_mode: "host"
-networks:
-  x11:
-  
+from launch import LaunchDescription
+from launch_ros.actions import Node
+from launch.substitutions import Command
+from ament_index_python.packages import get_package_share_directory
+import os
+import yaml
 
+def generate_launch_description():
+    ld = LaunchDescription()
+    config = os.path.join(
+        get_package_share_directory('f1tenth_gym_ros'),
+        'config',
+        'sim.yaml'
+        )
+    config_dict = yaml.safe_load(open(config, 'r'))
+    has_opp = config_dict['bridge']['ros__parameters']['num_agent'] > 1
+    teleop = config_dict['bridge']['ros__parameters']['kb_teleop']
+
+    mpc_node = Node(
+        package='f1tenth_gym_ros',
+        executable='mpc_centerline.py',
+        name='mpc',
+        parameters=[config]
+    )
+
+    launch_include = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('f1tenth_gym_ros'),
+                'launch/gym_bridge_launch.py'))
+    )
+
+    # finalize
+    ld.add_action(mpc_node)
+    ld.add_action(launch_include)
+
+    return ld

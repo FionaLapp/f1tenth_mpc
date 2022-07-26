@@ -1,19 +1,28 @@
 <?xml version="1.0"?>
 <launch>
   
-  <arg name="world_name" default= "Sochi"/>
+  <arg name="world_number" default="0"/>
+
+  <arg name="world_name" if="$(eval arg('world_number')==0)" value="Sochi"/>
+  <arg name="world_name" if="$(eval arg('world_number')==1)" value="Austin"/>
+
+  <arg name="racecar_pose" default="-x 0.21, -y -0.33 -z 0.05"  if="$(eval arg('world_name')=='Sochi')"/>
+    <arg name="racecar2_pose" default="-x 0.8007017, -y -0.2753365, -z 0.05"   if="$(eval arg('world_name')=='Sochi')"/>
+
   <arg name="node_type" default="ftg"/>
 
-  <include file="$(find f1tenth_gym_ros)/launch/gym_bridge_launch.py"
+
+    <!--waypoint file used by pure pursuit algorithm-->
+    <arg name="csv_filename" default="track_porto_26780.csv"    if="$(eval arg('world_name')=='track_porto')"/>
+    <arg name="csv_filename" default="racecar_walker_28998.csv" if="$(eval arg('world_name')=='racecar_walker')"/>
+    <arg name="csv_filename" default="track_barca_47396.csv"    if="$(eval arg('world_name')=='track_barca')"/>
+
+  <include file="$(find-pkg-share f1tenth_gym_ros)/launch/gym_bridge_launch.py"
   pass_all_args="true"/>
 
-  <include file="$(find f1tenth_gym_ros)/src/racing/mpc_ftg.py"
+  <include file="$(find-pkg-share f1tenth_gym_ros)/src/racing/mpc_ftg.py"
   pass_all_args="true"/>
 
-  <!-- Launch RVIZ -->
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>
-   
-  
     
   	 
 </launch>
