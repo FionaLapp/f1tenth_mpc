@@ -3,9 +3,56 @@
   
   <arg name="world_name" default= "Sochi"/>
   <arg name="node_type" default="ftg"/>
+  <arg name="z_start" if="$(eval arg('world_name')=='Sochi')" value="-0.856"/>
+  <arg name="w_start" if="$(eval arg('world_name')=='Sochi')" value="0.517"/>
+  <arg name="x_start" if="$(eval arg('world_name')=='Sochi')" value="0.0"/>
+  <arg name="y_start" if="$(eval arg('world_name')=='Sochi')" value="0.0"/>
+  
   <!-- Launch a map from the maps folder-->
   <arg name="map" default="$(find f1tenth_mpc)/src/maps/$(arg world_name)/$(arg world_name)_map.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
+
+  <node pkg="rostopic" type="rostopic" name="rostopic" args="pub initialpose geometry_msgs/PoseWithCovarianceStamped '
+       {
+               header: {
+                       frame_id: map
+               }, 
+               pose: {
+                       pose: {
+                               position: {
+                                       x: $(arg x_start),
+                                       y: $(arg y_start),
+                                       z: 0.0}, 
+                               orientation: {
+                                       x: 0.0,
+                                       y: 0.0,
+                                       z: $(arg z_start),
+                                       w: $(arg w_start)}
+                       }
+               }
+       }'" /> <!--this is for Sochi: start angle -2.054 rad-->
+
+
+  <!-- Begin the simulator with the parameters from params.yaml -->
+  <node pkg="f1tenth_simulator" name="f1tenth_simulator" type="simulator" output="screen">
+    <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+    
+  </node>
+
+  <!-- Launch the mux node with the parameters from params.yaml -->
+  <node pkg="f1tenth_simulator" name="mux_controller" type="mux" output="screen">
+    <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+  </node>
+
+  <!-- Launch the behavior controller node with the parameters from params.yaml -->
+  <node pkg="f1tenth_simulator" name="behavior_controller" type="behavior_controller" output="screen">
+    <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+  </node>
+
+  <!-- Launch the Keyboard Node -->
+  <node pkg="f1tenth_simulator" name="keyboard" type="keyboard" output="screen">
+    <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
+  </node>
 
   <!-- Launch the racecar model -->
   <include file="$(find f1tenth_mpc)/src/launch/racecar_model.launch"/>
