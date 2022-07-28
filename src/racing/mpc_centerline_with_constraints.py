@@ -36,35 +36,22 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
     def __init__(self, add_markers=True, time_step=0.1):
         self.setup_finished=False
         self.add_markers=add_markers
+        self.laps_completed=0
         self.params=super().get_params()
         self.read_desired_path()
+        self.calculate_wall_points()
         self.setup_node()
-         if self.params['velocity']<= self.params['max_speed']:
+        if self.params['velocity']<= self.params['max_speed']:
             max_speed=self.params['velocity']
         else:
-            rospy.loginfo("Can't go that fast, only able to drive {} but you requested {}. I'll drive as fast as I can though :-)".format(self.params['max_speed'], self.params['velocity']))
+            rospy.loginfo("Can't go that fast, only able to drive {}m/s but you requested {}m/s. I'll drive as fast as I can though :-)".format(self.params['max_speed'], self.params['velocity']))
             max_speed=self.params['max_speed']        
-       self.state=[0,0,0]
+        self.state=[0,0,0]
         self.setup_mpc(max_speed=max_speed, time_step=time_step, n_horizon=self.params['n_horizon'])
         
         self.setup_finished=True
         
-    def read_desired_path(self):
-        rospy.loginfo("Namespace:{}".format(rospy.get_namespace()))
-        map_name=rospy.get_param(rospy.get_namespace()+'mpc/world_name')
-        pathfile_name=rospy.get_param(rospy.get_namespace()+'mpc/directory')+'/src/maps/'+map_name+'/'+map_name+'_centerline.csv'
-        self.path_data=pd.read_csv(pathfile_name)
-        self.path_length=self.path_data.shape[0]
-        self.path_data_x=self.path_data[' x_m'].to_numpy()
-        self.path_data_y=self.path_data[' y_m'].to_numpy()                                            
-        self.previous_x=0
-        self.previous_y=0
-        self.double_previous_delta=0
-        self.previous_delta=0
-        self.distance_travelled=0.0
-        self.index=0
-        self.trackwidth=self.params['center_to_wall_distance']-0.1 # thee 0.1 is a random number I decided on for safety
-        self.calculate_wall_points()
+ 
 
     def  calculate_wall_points(self):
         """ take the corresponding centerline point, roll it over my one, and subtract to get tangent vectors, create a vector perpendicular to it by switching 
@@ -117,7 +104,11 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             
             #update target: find the point on the centerline fiile closest to the current position, then go two further
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
-            self.index=(distances_to_current_point.argmin()+2) %self.path_length
+            closest=(distances_to_current_point.argmin()+2) #not actually the closest because we want to always be ahead
+            self.index= closest %self.path_length
+            if closest ==self.path_length:
+                self.laps_completed+=1
+                rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
             self.make_mpc_step(self.state)
             # m=visualiser.GapMarker(self.path_data_x_l[self.index-1:self.index+1], self.path_data_y_l[self.index-1:self.index+1], 1)
             # m.draw_point()
@@ -234,8 +225,8 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         target_marker_list_y=[]
         for k in range(self.n_horizon + 1):
             i=(self.index+2*k)%self.path_length
-            template["_tvp", k, "target_x"]=self.path_data[' x_m'][i]
-            template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
+            template["_tvp", k, "target_x"]=self.path_data_x[i]
+            template["_tvp", k, "target_y"] =self.path_data_y[i]
             #vector equation of line
             #r=p+lambda*t (r: any point on line, p: knownn point on line, lambda: param, t: tangent to line)
             #i.e.

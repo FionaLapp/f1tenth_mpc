@@ -31,6 +31,7 @@ class FTGController(mpc_base_code.BaseController):
     """
     def __init__(self, add_markers=True, time_step=0.1):
         self.params=super().get_params()
+        self.read_desired_path()
         self.current_steering_angle=0
         self.setup_finished=False
         self.add_markers=add_markers
@@ -40,12 +41,12 @@ class FTGController(mpc_base_code.BaseController):
         self.previous_delta=0
         self.distance_to_wall_ahead=1000 # a large number
         self.state=[0,0,0]
-        
+        self.laps_completed=0
         super().setup_node()
         if self.params['velocity']<= self.params['max_speed']:
             max_speed=self.params['velocity']
         else:
-            rospy.loginfo("Can't go that fast, only able to drive {} but you requested {}. I'll drive as fast as I can though :-)".format(self.params['max_speed'], self.params['velocity']))
+            rospy.loginfo("Can't go that fast, only able to drive {}m/s but you requested {}m/s. I'll drive as fast as I can though :-)".format(self.params['max_speed'], self.params['velocity']))
             max_speed=self.params['max_speed']        
         self.max_range=max_speed*time_step*self.params['n_horizon']#v*t=s, t=delta_t*horizon
         self.threshold=self.max_range
@@ -78,7 +79,12 @@ class FTGController(mpc_base_code.BaseController):
             orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
             (roll, pitch, phi) = euler_from_quaternion (orientation_list)
             #rospy.loginfo("{}, {}, {}".format(x, y, phi))
-            
+            distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
+            closest=(distances_to_current_point.argmin()+2) #not actually the closest because we want to always be ahead
+            self.index= closest %self.path_length
+            if closest ==self.path_length:
+                self.laps_completed+=1
+                rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
             self.state= np.array([x,y, phi])
             self.make_mpc_step(self.state)
             
@@ -184,7 +190,7 @@ class FTGController(mpc_base_code.BaseController):
         points_per_side=int((end_index-start_index)/2)
         avg_wall_ahead_x, avg_wall_ahead_y=self.lidar_to_xy_range(best_point_index-points_per_side, best_point_index+points_per_side+1, self.uncut_ranges)
         avg_distance_to_wall_ahead=(self.state[0]-avg_wall_ahead_x)**2+(self.state[1]-avg_wall_ahead_y)**2
-        print("avg:{}, point:{}".format(np.mean(avg_distance_to_wall_ahead),self.distance_to_wall_ahead))
+        #print("avg:{}, point:{}".format(np.mean(avg_distance_to_wall_ahead),self.distance_to_wall_ahead))
         if self.distance_to_wall_ahead<=7*self.params['center_to_wall_distance']:
             print("about_to_crash")
         if not len(gap_x_array)==0:   #if the list is empty, just stick to the old target points 

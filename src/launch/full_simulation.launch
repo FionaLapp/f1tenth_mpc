@@ -9,7 +9,7 @@
   <arg name="r_v" default="1"/>
   <arg name="r_delta" default="1"/>
   <arg name="velocity" default="5"/>
-  <arg name="include_obstacles" default="true"/>
+  <arg name="include_obstacles" default="false"/>
   <!--this is for Sochi: start angle -2.054 rad-->
   <arg name="z_start" if="$(eval arg('world_name')=='Sochi')" value="-0.856"/>
   <arg name="w_start" if="$(eval arg('world_name')=='Sochi')" value="0.517"/>

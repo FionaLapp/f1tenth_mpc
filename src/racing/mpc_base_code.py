@@ -44,6 +44,7 @@ class BaseController(ABC):
     """
     def __init__(self, add_markers=True, time_step=0.1):
         self.setup_finished=False
+        self.laps_completed=0
         self.current_steering_angle=0
         self.add_markers=add_markers
         self.params=self.get_params()
@@ -52,7 +53,7 @@ class BaseController(ABC):
         if self.params['velocity']<= self.params['max_speed']:
             max_speed=self.params['velocity']
         else:
-            rospy.loginfo("Can't go that fast, only able to drive {} but you requested {}. I'll drive as fast as I can though :-)".format(self.params['max_speed'], self.params['velocity']))
+            rospy.loginfo("Can't go that fast, only able to drive {}m/s but you requested {}m/s. I'll drive as fast as I can though :-)".format(self.params['max_speed'], self.params['velocity']))
             max_speed=self.params['max_speed']        
         self.setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
         self.setup_finished=True
@@ -61,7 +62,8 @@ class BaseController(ABC):
 
     def read_desired_path(self):
         print("Ns:{}".format(rospy.get_namespace()))
-        map_name=rospy.get_param(rospy.get_namespace()+'mpc/world_name')
+        #map_name=rospy.get_param(rospy.get_namespace()+'mpc/world_name')
+        map_name=self.params['world_name']
         pathfile_name=rospy.get_param(rospy.get_namespace()+'mpc/directory')+'/src/maps/'+map_name+'/'+map_name+'_centerline.csv'
         self.path_data=pd.read_csv(pathfile_name)
         self.path_length=self.path_data.shape[0]
@@ -76,6 +78,8 @@ class BaseController(ABC):
         self.previous_delta=0
         self.distance_travelled=0.0
         self.index=0
+        self.trackwidth=self.params['center_to_wall_distance']-0.1 # thee 0.1 is a random number I decided on for safety
+        
 
         #first derivatives
         dx=np.gradient(self.path_data_x)
@@ -143,7 +147,7 @@ class BaseController(ABC):
         params['r_v']=rospy.get_param(namespace+'r_v')
         params['r_delta']=rospy.get_param(namespace+'r_delta')
         params['velocity']=rospy.get_param(namespace+'velocity')
-        
+        params['world_name']=rospy.get_param(namespace+'world_name')
         return params    
 
     def make_mpc_step(self, x_state):
@@ -165,7 +169,7 @@ class BaseController(ABC):
         delta=u[0]
         self.current_steering_angle=delta
         v=u[1]
-        rospy.loginfo("{}, {}".format(u[0], u[1]))
+        #rospy.loginfo("{}, {}".format(u[0], u[1]))
         #setup drive message
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()
@@ -185,7 +189,8 @@ class BaseController(ABC):
     def localisation_callback(self, data:Odometry):
         """
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
-        Please call make_mpc_step in this method and update goal
+        Please call make_mpc_step in this method and update goal.
+        Remember to update self.laps_completed here if you cross the startline
         """
         pass
         
