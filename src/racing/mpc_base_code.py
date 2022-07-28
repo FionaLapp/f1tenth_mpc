@@ -236,8 +236,8 @@ class BaseController(ABC):
         target_y_list=[]
         for k in range(self.n_horizon + 1):
             i=(self.index+k)%self.path_length
-            template["_tvp", k, "target_x"]=self.path_data[' x_m'][i]
-            template["_tvp", k, "target_y"] =self.path_data[' y_m'][i]
+            template["_tvp", k, "target_x"]=self.path_data_x[i]
+            template["_tvp", k, "target_y"] =self.path_data_y[i]
             target_x_list.append(self.path_data_x[i])
             target_y_list.append(self.path_data_y[i])
             

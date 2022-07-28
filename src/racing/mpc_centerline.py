@@ -43,7 +43,7 @@ class ReadCSVController(mpc_base_code.BaseController):
         pathfile_name=rospy.get_param(rospy.get_namespace()+'mpc/directory')+'/src/maps/'+map_name+'/'+map_name+'_centerline.csv'
         self.path_data=pd.read_csv(pathfile_name)
         self.path_length=self.path_data.shape[0]
-        self.path_data_x=self.path_data[' x_m'].to_numpy()
+        self.path_data_x=self.path_data['# x_m'].to_numpy()
         self.path_data_y=self.path_data[' y_m'].to_numpy()   
         delta_x=self.path_data_x-np.roll(self.path_data_x, 1) 
         delta_y=self.path_data_y-np.roll(self.path_data_y, 1)   

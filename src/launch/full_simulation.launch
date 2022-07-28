@@ -1,12 +1,18 @@
 <?xml version="1.0"?>
 <launch>
   
-  <arg name="world_name" default= "Sochi"/>
+  <arg name="world_name" default= "IMS"/>
   <arg name="node_type" default="ftg"/>
+  <!--this is for Sochi: start angle -2.054 rad-->
   <arg name="z_start" if="$(eval arg('world_name')=='Sochi')" value="-0.856"/>
   <arg name="w_start" if="$(eval arg('world_name')=='Sochi')" value="0.517"/>
   <arg name="x_start" if="$(eval arg('world_name')=='Sochi')" value="0.0"/>
   <arg name="y_start" if="$(eval arg('world_name')=='Sochi')" value="0.0"/>
+  <!--this is for IMS: start angle -1.570 rad-->
+  <arg name="w_start" if="$(eval arg('world_name')=='IMS')" value="0.707"/>
+  <arg name="z_start" if="$(eval arg('world_name')=='IMS')" value="-0.707"/>
+  <arg name="x_start" if="$(eval arg('world_name')=='IMS')" value="0.0"/>
+  <arg name="y_start" if="$(eval arg('world_name')=='IMS')" value="0.0"/>
   
   <!-- Launch a map from the maps folder-->
   <arg name="map" default="$(find f1tenth_mpc)/src/maps/$(arg world_name)/$(arg world_name)_map.yaml"/>
