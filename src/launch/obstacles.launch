@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<launch>
+  
+   <node pkg="rostopic" type="rostopic" name="$(anon obstacle1)" args="pub clicked_point geometry_msgs/PointStamped 
+    ' { header:{frame_id: map
+              },
+      point:{ x: 1 ,
+              y: -2.0 ,
+              z: 0.0
+              }
+    }' " /> 
+   
+   
+    <node pkg="rostopic" type="rostopic" name="$(anon obstacle2)" args="pub clicked_point geometry_msgs/PointStamped 
+    ' { header:{frame_id: map
+              },
+      point:{ x: 0.0 ,
+              y: -10.0 ,
+              z: 0.0
+              }
+    }' " /> 
+    
+
+  	 
+</launch>
