@@ -9,7 +9,7 @@
       <rosparam param="n_horizon" subst_value="true">$(arg n_horizon)</rosparam>
    <rosparam param="r_v" subst_value="true">$(arg r_v)</rosparam>
     <rosparam param="r_delta" subst_value="true">$(arg r_delta)</rosparam>
-    
+        <rosparam param="velocity" subst_value="true">$(arg velocity)</rosparam>
      </node> 
 
    

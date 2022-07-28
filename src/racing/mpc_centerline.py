@@ -29,8 +29,8 @@ import mpc_base_code as mpc_base_code
 class ReadCSVController(mpc_base_code.BaseController):
     """ 
     """
-    def __init__(self, max_speed=None, use_splines=False, time_step=0.1):
-        super().__init__(max_speed=max_speed, time_step=time_step)
+    def __init__(self, time_step=0.1):
+        super().__init__( time_step=time_step)
         
         
         
@@ -59,7 +59,7 @@ class ReadCSVController(mpc_base_code.BaseController):
             #rospy.loginfo(self.index)
             self.make_mpc_step(self.state)
         except AttributeError:
-            print("Initialisation not finished")
+            rospy.loginfo("Initialisation not finished")
 
     
     @property
@@ -77,7 +77,7 @@ def main(args):
     rospy.init_node("mpc_node", anonymous=True)
     rospy.loginfo("starting up mpc node")
     time_step=0.1
-    model_predictive_control =ReadCSVController(max_speed=None, use_splines=False, time_step=time_step)
+    model_predictive_control =ReadCSVController(time_step=time_step)
     rospy.sleep(time_step)
     rospy.spin()
 

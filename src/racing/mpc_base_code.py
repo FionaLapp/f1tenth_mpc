@@ -42,15 +42,18 @@ import helper.visualiser as visualiser
 class BaseController(ABC):
     """ 
     """
-    def __init__(self, max_speed=None, add_markers=True, time_step=0.1):
+    def __init__(self, add_markers=True, time_step=0.1):
         self.setup_finished=False
         self.current_steering_angle=0
         self.add_markers=add_markers
         self.params=self.get_params()
         self.read_desired_path()
         self.setup_node()
-        if max_speed is None:
-            max_speed=self.params['max_speed']
+        if self.params['velocity']<= self.params['max_speed']:
+            max_speed=self.params['velocity']
+        else:
+            rospy.loginfo("Can't go that fast, only able to drive {} but you requested {}. I'll drive as fast as I can though :-)".format(self.params['max_speed'], self.params['velocity']))
+            max_speed=self.params['max_speed']        
         self.setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
         self.setup_finished=True
         
@@ -139,6 +142,7 @@ class BaseController(ABC):
         params['n_horizon']=rospy.get_param(namespace+'n_horizon')
         params['r_v']=rospy.get_param(namespace+'r_v')
         params['r_delta']=rospy.get_param(namespace+'r_delta')
+        params['velocity']=rospy.get_param(namespace+'velocity')
         
         return params    
 
