@@ -83,8 +83,7 @@ class FTGController(mpc_base_code.BaseController):
             closest=(distances_to_current_point.argmin()+2) #not actually the closest because we want to always be ahead
             self.index= closest %self.path_length
             if closest ==self.path_length:
-                self.laps_completed+=1
-                rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
+                self.on_lap_complete()
             self.state= np.array([x,y, phi])
             self.make_mpc_step(self.state)
             

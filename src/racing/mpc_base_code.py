@@ -35,7 +35,7 @@ import rospy
 from nav_msgs.msg import Odometry
 from ackermann_msgs.msg import AckermannDriveStamped
 
-  
+
 # importing 
 import helper.visualiser as visualiser
 
@@ -100,13 +100,14 @@ class BaseController(ABC):
         
         localisation_topic= '/odom' #change to a different topic if applicable (e.g. if using hector)
         drive_topic = '/nav'
+        lap_pub= '/laps'
 
 
         self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)
         self.fixing_a_weird_bug_and_not_much_else_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#subscribing to /odom a second time somehow makes the first one work, otherwise it gets stuck at the origin
     
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
-        
+        self.lap_pub=
         
         
     
@@ -149,7 +150,10 @@ class BaseController(ABC):
         params['velocity']=rospy.get_param(namespace+'velocity')
         params['world_name']=rospy.get_param(namespace+'world_name')
         return params    
-
+    def on_lap_complete(self):
+        self.laps_completed+=1
+        rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
+        
     def make_mpc_step(self, x_state):
         if not self.setup_finished or not self.controller.flags['setup']:
             rospy.logdebug("setup not finished, can't make step")
