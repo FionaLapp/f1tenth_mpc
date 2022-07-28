@@ -4,8 +4,7 @@
 
 	
   <node pkg="f1tenth_mpc" name="mpc" type="mpc_ftg.py" output="screen">
-          <rosparam command="load" file="$(find f1tenth_simulator)/params.yaml"/>
-  	  <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
+        <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   	  <rosparam param="n_horizon" subst_value="true">$(arg n_horizon)</rosparam>
    <rosparam param="r_v" subst_value="true">$(arg r_v)</rosparam>
     <rosparam param="r_delta" subst_value="true">$(arg r_delta)</rosparam>
