@@ -30,62 +30,12 @@ class ReadCSVController(mpc_base_code.BaseController):
     """ 
     """
     def __init__(self, max_speed=None, use_splines=False, time_step=0.1):
-        self.read_desired_path(use_splines=use_splines)
         super().__init__(max_speed=max_speed, time_step=time_step)
         
         
         
        
 
-    def read_desired_path(self, use_splines):
-        print("Ns:{}".format(rospy.get_namespace()))
-        map_name=rospy.get_param(rospy.get_namespace()+'mpc/world_name')
-        pathfile_name=rospy.get_param(rospy.get_namespace()+'mpc/directory')+'/src/maps/'+map_name+'/'+map_name+'_centerline.csv'
-        self.path_data=pd.read_csv(pathfile_name)
-        self.path_length=self.path_data.shape[0]
-        self.path_data_x=self.path_data['# x_m'].to_numpy()
-        self.path_data_y=self.path_data[' y_m'].to_numpy()   
-        delta_x=self.path_data_x-np.roll(self.path_data_x, 1) 
-        delta_y=self.path_data_y-np.roll(self.path_data_y, 1)   
-        delta_s=np.sqrt(delta_x**2+delta_y**2)     
-        self.path_data_s= np.cumsum(delta_s)                                    
-        self.previous_x=0
-        self.previous_y=0
-        self.previous_delta=0
-        self.distance_travelled=0.0
-        self.index=0
-
-        #first derivatives
-        dx=np.gradient(self.path_data_x)
-        dy=np.gradient(self.path_data_y)
-
-        #second derivatives 
-        d2x = np.gradient(dx)
-        d2y = np.gradient(dy)
-
-        #calculation of curvature 
-        self.curvature_array = np.abs(dx * d2y - d2x * dy) / (dx * dx + dy * dy)**1.5
-        
-        
-
-        #the following code was just me trying to compute splines instead of only having  points and connecting them with lines. probably unecessary
-        self.use_splines=use_splines
-        if use_splines:
-            spline=interpolate.SmoothBivariateSpline(self.path_data_x, self.path_data_y, self.path_data_s) 
-            n_1 = len(self.path_data_y)
-            tck,u = interpolate.splprep([self.path_data_x,self.path_data_y],s=0)
-            unew = np.arange(0,1.0,0.001)
-            out = interpolate.splev(unew,tck)
-            
-            plt.figure()
-            plt.plot(out[0],out[1])#,np.sin(2*np.pi*unew),np.cos(2*np.pi*unew),'b')
-            plt.legend(['Cubic Spline'])
-            
-            plt.title('Spline of parametrically-defined curve')
-            plt.show()
-            g=GapMarker(out[0],out[1])
-            self.out=out
-            g.draw_point()
     
 
     def localisation_callback(self, data:Odometry):

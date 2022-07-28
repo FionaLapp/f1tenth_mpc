@@ -26,6 +26,9 @@ from do_mpc.graphics import Graphics
 import matplotlib.pyplot as plt
 import matplotlib
 
+import numpy as np
+import pandas as pd
+
 
 #ROS Imports
 import rospy
@@ -44,6 +47,7 @@ class BaseController(ABC):
         self.current_steering_angle=0
         self.add_markers=add_markers
         self.params=self.get_params()
+        self.read_desired_path()
         self.setup_node()
         if max_speed is None:
             max_speed=self.params['max_speed']
@@ -52,7 +56,38 @@ class BaseController(ABC):
         
        
 
+    def read_desired_path(self):
+        print("Ns:{}".format(rospy.get_namespace()))
+        map_name=rospy.get_param(rospy.get_namespace()+'mpc/world_name')
+        pathfile_name=rospy.get_param(rospy.get_namespace()+'mpc/directory')+'/src/maps/'+map_name+'/'+map_name+'_centerline.csv'
+        self.path_data=pd.read_csv(pathfile_name)
+        self.path_length=self.path_data.shape[0]
+        self.path_data_x=self.path_data['# x_m'].to_numpy()
+        self.path_data_y=self.path_data[' y_m'].to_numpy()   
+        delta_x=self.path_data_x-np.roll(self.path_data_x, 1) 
+        delta_y=self.path_data_y-np.roll(self.path_data_y, 1)   
+        delta_s=np.sqrt(delta_x**2+delta_y**2)     
+        self.path_data_s= np.cumsum(delta_s)                                    
+        self.previous_x=0
+        self.previous_y=0
+        self.previous_delta=0
+        self.distance_travelled=0.0
+        self.index=0
 
+        #first derivatives
+        dx=np.gradient(self.path_data_x)
+        dy=np.gradient(self.path_data_y)
+
+        #second derivatives 
+        d2x = np.gradient(dx)
+        d2y = np.gradient(dy)
+
+        #calculation of curvature 
+        self.curvature_array = np.abs(dx * d2y - d2x * dy) / (dx * dx + dy * dy)**1.5
+        
+        
+
+        
     def setup_node(self):
         #Topics & Subs, Pubs
         
