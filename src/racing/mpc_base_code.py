@@ -101,7 +101,10 @@ class BaseController(ABC):
         params['directory']=rospy.get_param(namespace+'directory')
         params['ftg_safety_raduis']=rospy.get_param(namespace+'ftg_safety_raduis')
         params['center_to_wall_distance']=rospy.get_param(namespace+'center_to_wall_distance')
-        params['n_horizon']=rospy.get_param(namespace+'n_horizon', 5)
+        params['n_horizon']=rospy.get_param(namespace+'n_horizon')
+        params['r_v']=rospy.get_param(namespace+'r_v')
+        params['r_delta']=rospy.get_param(namespace+'r_delta')
+        
         return params    
 
     def make_mpc_step(self, x_state):
@@ -208,8 +211,8 @@ class BaseController(ABC):
         self.controller.bounds['upper','_u','v'] = max_speed
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
-        self.controller.set_rterm(v=1)
-        self.controller.set_rterm(delta=1)
+        self.controller.set_rterm(v=self.params['r_v'])
+        self.controller.set_rterm(delta=self.params['r_delta'])
         
         self.controller.setup()
 

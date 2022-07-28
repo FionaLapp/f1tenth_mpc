@@ -5,6 +5,9 @@
   <arg name="x_start" default="0.0"/>
   <arg name="y_start" default="0.0"/>
   <arg name="node_type" default="ftg"/>
+  <arg name="n_horizon" default="5"/>
+  <arg name="r_v" default="1"/>
+  <arg name="r_delta" default="1"/>
   <!--this is for Sochi: start angle -2.054 rad-->
   <arg name="z_start" if="$(eval arg('world_name')=='Sochi')" value="-0.856"/>
   <arg name="w_start" if="$(eval arg('world_name')=='Sochi')" value="0.517"/>
@@ -69,7 +72,7 @@
   <include file="$(find f1tenth_mpc)/src/launch/racecar_model.launch"/>
 
   <include file="$(find f1tenth_mpc)/src/launch/mpc_$(arg node_type).launch"
-  pass_all_args="true"/>
+  pass_all_args="true"/>  
 
   <!-- Launch RVIZ -->
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>

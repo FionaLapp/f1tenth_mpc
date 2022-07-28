@@ -205,8 +205,8 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.lower=self.controller.set_nl_cons('lower', -(self.constraint_t_x*(self.y-self.constraint_p_y_lower)-self.constraint_t_y*(self.x-self.constraint_p_x_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
         
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
-        self.controller.set_rterm(v=1)
-        self.controller.set_rterm(delta=4)
+        self.controller.set_rterm(v=self.params['r_v'])
+        self.controller.set_rterm(delta=self.params['r_delta'])
 
         self.controller.setup()
 
