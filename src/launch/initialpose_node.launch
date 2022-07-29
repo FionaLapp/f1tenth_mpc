@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+ <node pkg="rostopic" type="rostopic" name="start" args="pub initialpose geometry_msgs/PoseWithCovarianceStamped '
+       {
+               header: {
+                       frame_id: map
+               }, 
+               pose: {
+                       pose: {
+                               position: {
+                                       x: $(arg x_start),
+                                       y: $(arg y_start),
+                                       z: 0.0}, 
+                               orientation: {
+                                       x: 0.0,
+                                       y: 0.0,
+                                       z: $(arg z_start),
+                                       w: $(arg w_start)}
+                       }
+               }
+       }'" /> 
+</launch>

@@ -11,7 +11,7 @@ name: speedycar
 paint: red
 x_pos: 0
 y_pos: 0
-max_laps: 3
+max_laps: 5
 
 
 

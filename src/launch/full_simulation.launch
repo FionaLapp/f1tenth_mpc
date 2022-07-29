@@ -28,25 +28,7 @@
   <arg name="map" default="$(find f1tenth_mpc)/src/maps/$(arg world_name)/$(arg world_name)_map.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
 
-  <node pkg="rostopic" type="rostopic" name="start" args="pub initialpose geometry_msgs/PoseWithCovarianceStamped '
-       {
-               header: {
-                       frame_id: map
-               }, 
-               pose: {
-                       pose: {
-                               position: {
-                                       x: $(arg x_start),
-                                       y: $(arg y_start),
-                                       z: 0.0}, 
-                               orientation: {
-                                       x: 0.0,
-                                       y: 0.0,
-                                       z: $(arg z_start),
-                                       w: $(arg w_start)}
-                       }
-               }
-       }'" /> 
+ <include file="$(find f1tenth_mpc)/src/launch/initialpose_node.launch" pass_all_args="true" />
   <!-- include obstacles-->
 
   <include file="$(find f1tenth_mpc)/src/launch/obstacles.launch"  pass_all_args="true" if="$(arg include_obstacles)"/>

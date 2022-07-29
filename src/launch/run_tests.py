@@ -1,11 +1,25 @@
 import rosgraph
 import os
 import time
+import csv
+import sys
 
+# open the file in the write mode
+cwd=sys.path[0]
+print(cwd)
+csv_filepath=cwd+"/../logs/testlog"
+header=["node_type","r_v", "r_delta", "n_horizon", "velocity", "world_name", "include obstacles", "lap1", "lap2","lap3", "lap4", "lap5", "collisions", "mean_laptime", "std_dev"]
+with open(csv_filepath, 'w') as f:
+    # create the csv writer
+    writer = csv.writer(f)
+
+    # write a row to the csv file
+    writer.writerow(header)
 os.system("roslaunch f1tenth_mpc full_simulation.launch node_type:=centerline velocity:='8'")
-for i in range(1000):
+for i in range(60): #timeout: 5 min (60*5/5)
     if rosgraph.is_master_online(): # Checks the master uri and results boolean (True or False)
         print('ROS MASTER is Online')
     else:
         print ('ROS MASTER is Offline')
     time.sleep(5)
+os.system("killall -9 rosmaster")
