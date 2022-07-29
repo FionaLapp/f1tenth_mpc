@@ -13,10 +13,12 @@ import matplotlib.pyplot as plt
 
 #ROS Imports
 import rospy
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from std_msgs.msg import String, Int32MultiArray, Int32
 
 from rospy.rostime import Duration, Time
 import os
+import time
 
 
 class LapTimer():
@@ -27,6 +29,11 @@ class LapTimer():
         self.collision=0
         namespace=rospy.get_namespace()+'lap_timer/'
         self.max_laps=rospy.get_param(namespace+'max_laps')
+        self.x_start=rospy.get_param(namespace+'x_start')
+        self.y_start=rospy.get_param(namespace+'y_start')
+        self.w_start=rospy.get_param(namespace+'w_start')
+        self.z_start=rospy.get_param(namespace+'z_start')
+        self.penalty=rospy.get_param(namespace+'penalty')
         self.setup_node()
         
 
@@ -36,10 +43,14 @@ class LapTimer():
         
         lap_sub= '/laps'
         mux_sub='/mux'
+        initialpose_pub='/initialpose'
+        key_pub='/key'
 
 
         self.lap_sub=rospy.Subscriber(lap_sub, Int32, self.lap_callback)
         self.mux_sub=rospy.Subscriber(mux_sub, Int32MultiArray, self.mux_callback)
+        self.initialpose_pub=rospy.Publisher(initialpose_pub, PoseWithCovarianceStamped, queue_size=5)
+        self.key_pub=rospy.Publisher(key_pub, String, queue_size=5)
 
         
     def lap_callback(self, data:Int32):    
@@ -64,12 +75,21 @@ class LapTimer():
             rospy.loginfo("start time:{}".format(self.start_time))
         
         elif np.array_equal(data.data, np.array([0,0,0,0,0], dtype=np.int32)):
+            lap_time=self.start_time-Time.now() #this is just fyi, the timer keeps running
+            rospy.loginfo("Collision. Resetting to initial position and adding {}s penalty. Wasted time on lap: {}".format(self.penalty, lap_time.to_sec()))
             
             self.lap_time=Time.now()-self.start_time
             self.collision+=1
-        
+            initialpose=PoseWithCovarianceStamped()
+            initialpose.pose.pose.position.x=self.x_start
+            initialpose.pose.pose.position.y=self.y_start
+            initialpose.pose.pose.orientation.w=self.w_start
+            initialpose.pose.pose.orientation.z=self.z_start
+            self.initialpose_pub.publish(initialpose)
+            time.sleep(self.penalty)
+            self.key_pub.publish("n")
             rospy.loginfo("Collision. {} lap(s) completed before crash. Duration: {}".format(self.lap_count, self.lap_time.to_sec()))
-            self.do_logging()
+            #self.do_logging()
         else: 
             raise Exception("weird mux: {}".format(data))
     

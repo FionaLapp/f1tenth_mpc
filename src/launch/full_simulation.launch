@@ -60,10 +60,26 @@
 
   <node pkg="f1tenth_mpc" name="lap_timer" type="lap_timer.py" output="screen">
    <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
-  	    </node>
+  <rosparam param="x_start" subst_value="True">$(arg x_start)</rosparam>
+<rosparam param="y_start" subst_value="True">$(arg y_start)</rosparam>
 
-  <include file="$(find f1tenth_mpc)/src/launch/mpc_$(arg node_type).launch"
-  pass_all_args="true"/>  
+<rosparam param="z_start" subst_value="True">$(arg z_start)</rosparam>
+
+<rosparam param="w_start" subst_value="True">$(arg w_start)</rosparam>
+
+</node>
+ 
+
+<node pkg="f1tenth_mpc" name="mpc" type="mpc_$(arg node_type).py" output="screen"
+  >
+          <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
+  	  <rosparam param="world_name" subst_value="True">$(arg world_name)</rosparam>
+      <rosparam param="n_horizon" subst_value="true">$(arg n_horizon)</rosparam>
+    <rosparam param="r_v" subst_value="true">$(arg r_v)</rosparam>
+    <rosparam param="r_delta" subst_value="true">$(arg r_delta)</rosparam>
+    <rosparam param="velocity" subst_value="true">$(arg velocity)</rosparam>
+    
+     </node> 
 
   <!-- Launch RVIZ -->
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>

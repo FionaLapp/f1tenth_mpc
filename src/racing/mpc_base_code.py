@@ -59,11 +59,12 @@ class BaseController(ABC):
             rospy.loginfo("Can't go that fast, only able to drive {}m/s but you requested {}m/s. I'll drive as fast as I can though :-)".format(self.params['max_speed'], self.params['velocity']))
             max_speed=self.params['max_speed']        
         self.setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
-        self.setup_finished=True
-        
         
         self.key_pub.publish(String("n"))
         self.lap_start_time=Time.now()
+        self.setup_finished=True
+        
+        
         
        
 
@@ -115,8 +116,8 @@ class BaseController(ABC):
         self.fixing_a_weird_bug_and_not_much_else_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#subscribing to /odom a second time somehow makes the first one work, otherwise it gets stuck at the origin
     
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
-        self.key_pub=rospy.Publisher(key_pub, String, queue_size=1)
-        self.lap_pub=rospy.Publisher(lap_pub, Int32, queue_size=1)
+        self.key_pub=rospy.Publisher(key_pub, String, queue_size=5)
+        self.lap_pub=rospy.Publisher(lap_pub, Int32, queue_size=5)
         
         
         

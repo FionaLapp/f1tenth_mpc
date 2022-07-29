@@ -60,10 +60,11 @@ class FTGController(mpc_base_code.BaseController):
         self.min_gap_width= self.params['width']/(self.angle_increment*self.max_range) #min_gap_width=car_width=angle_inc*min_gap_number*max_range (approximately, for large max_ranges  since that'd give the arclength)
         
         super().setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
-        self.setup_finished=True
-
+        
         self.key_pub.publish(String("n"))
         self.lap_start_time=Time.now()
+        self.setup_finished=True
+
         
         
 

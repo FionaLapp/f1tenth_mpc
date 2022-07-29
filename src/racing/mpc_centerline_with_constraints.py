@@ -51,12 +51,13 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.state=[0,0,0]
         self.setup_mpc(max_speed=max_speed, time_step=time_step, n_horizon=self.params['n_horizon'])
         
-        self.setup_finished=True
-
 
         self.key_pub.publish(String("n"))
         self.lap_start_time=Time.now()
         
+        self.setup_finished=True
+
+
  
 
     def  calculate_wall_points(self):
