@@ -35,6 +35,7 @@ import rospy
 from nav_msgs.msg import Odometry
 from ackermann_msgs.msg import AckermannDriveStamped
 from std_msgs.msg import String
+from std_msgs.msg import Int32
 
 from rospy.rostime import Duration, Time
 
@@ -115,7 +116,7 @@ class BaseController(ABC):
     
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         self.key_pub=rospy.Publisher(key_pub, String, queue_size=1)
-        self.lap_pub=rospy.Publisher(lap_pub, String, queue_size=1)
+        self.lap_pub=rospy.Publisher(lap_pub, Int32, queue_size=1)
         
         
         
@@ -164,7 +165,7 @@ class BaseController(ABC):
             self.lap_start_time=Time.now()
             self.laps_completed+=1
             rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
-            self.lap_pub.publish(String("done"))
+            self.lap_pub.publish(Int32(self.laps_completed))
         else: 
             rospy.loginfo("Do you seriously want me to believe you completed a lap in {}s?".format((self.lap_start_time-Time.now()).to_sec()))
 
