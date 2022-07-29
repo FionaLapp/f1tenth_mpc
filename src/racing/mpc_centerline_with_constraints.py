@@ -26,6 +26,8 @@ from do_mpc.controller import MPC
 import rospy
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
+from std_msgs.msg import String
+from rospy.rostime import Duration, Time
 
 import mpc_base_code as mpc_base_code
 import helper.visualiser as visualiser
@@ -50,6 +52,10 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.setup_mpc(max_speed=max_speed, time_step=time_step, n_horizon=self.params['n_horizon'])
         
         self.setup_finished=True
+
+
+        self.key_pub.publish(String("n"))
+        self.lap_start_time=Time.now()
         
  
 
@@ -107,7 +113,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             closest=(distances_to_current_point.argmin()+2) #not actually the closest because we want to always be ahead
             self.index= closest %self.path_length
             if closest ==self.path_length:
-                self.on_lap_complete()
+                super().on_lap_complete()
             self.make_mpc_step(self.state)
             # m=visualiser.GapMarker(self.path_data_x_l[self.index-1:self.index+1], self.path_data_y_l[self.index-1:self.index+1], 1)
             # m.draw_point()

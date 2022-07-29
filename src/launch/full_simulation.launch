@@ -57,7 +57,7 @@
     <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
     
   </node>
-
+  
   <!-- Launch the mux node with the parameters from params.yaml -->
   <node pkg="f1tenth_simulator" name="mux_controller" type="mux" output="screen">
     <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
@@ -75,6 +75,10 @@
 
   <!-- Launch the racecar model -->
   <include file="$(find f1tenth_mpc)/src/launch/racecar_model.launch"/>
+
+  <node pkg="f1tenth_mpc" name="lap_timer" type="lap_timer.py" output="screen">
+   <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
+  	    </node>
 
   <include file="$(find f1tenth_mpc)/src/launch/mpc_$(arg node_type).launch"
   pass_all_args="true"/>  

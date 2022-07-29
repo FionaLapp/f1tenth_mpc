@@ -34,7 +34,9 @@ import pandas as pd
 import rospy
 from nav_msgs.msg import Odometry
 from ackermann_msgs.msg import AckermannDriveStamped
+from std_msgs.msg import String
 
+from rospy.rostime import Duration, Time
 
 # importing 
 import helper.visualiser as visualiser
@@ -57,6 +59,10 @@ class BaseController(ABC):
             max_speed=self.params['max_speed']        
         self.setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
         self.setup_finished=True
+        
+        
+        self.key_pub.publish(String("n"))
+        self.lap_start_time=Time.now()
         
        
 
@@ -101,13 +107,16 @@ class BaseController(ABC):
         localisation_topic= '/odom' #change to a different topic if applicable (e.g. if using hector)
         drive_topic = '/nav'
         lap_pub= '/laps'
+        key_pub='/key'
 
 
         self.localisation_sub=rospy.Subscriber(localisation_topic, Odometry, self.localisation_callback)
         self.fixing_a_weird_bug_and_not_much_else_sub=rospy.Subscriber('/odom', Odometry, self.pose_callback, queue_size=1)#subscribing to /odom a second time somehow makes the first one work, otherwise it gets stuck at the origin
     
         self.drive_pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
-        self.lap_pub=
+        self.key_pub=rospy.Publisher(key_pub, String, queue_size=1)
+        self.lap_pub=rospy.Publisher(lap_pub, String, queue_size=1)
+        
         
         
     
@@ -151,9 +160,14 @@ class BaseController(ABC):
         params['world_name']=rospy.get_param(namespace+'world_name')
         return params    
     def on_lap_complete(self):
-        self.laps_completed+=1
-        rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
-        
+        if (Time.now()-self.lap_start_time).to_sec()>1: #otherwise it's just really close to the previous one
+            self.lap_start_time=Time.now()
+            self.laps_completed+=1
+            rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
+            self.lap_pub.publish(String("done"))
+        else: 
+            rospy.loginfo("Do you seriously want me to believe you completed a lap in {}s?".format((self.lap_start_time-Time.now()).to_sec()))
+
     def make_mpc_step(self, x_state):
         if not self.setup_finished or not self.controller.flags['setup']:
             rospy.logdebug("setup not finished, can't make step")
