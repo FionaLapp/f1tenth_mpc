@@ -9,6 +9,7 @@
   <arg name="r_v" default="1"/>
   <arg name="r_delta" default="1"/>
   <arg name="velocity" default="5"/>
+  <arg name="log_file_name" default= ""/> <!--don't reset this unless the file exists-->
   <arg name="include_obstacles" default="false"/>
   <!--this is for Sochi: start angle -2.054 rad-->
   <arg name="z_start" if="$(eval arg('world_name')=='Sochi')" value="-0.856"/>
@@ -66,6 +67,15 @@
 <rosparam param="z_start" subst_value="True">$(arg z_start)</rosparam>
 
 <rosparam param="w_start" subst_value="True">$(arg w_start)</rosparam>
+<rosparam param="log_file_name" subst_value="True">$(arg log_file_name)</rosparam>
+ <rosparam param="world_name" subst_value="True">$(arg world_name)</rosparam>
+      <rosparam param="n_horizon" subst_value="true">$(arg n_horizon)</rosparam>
+    <rosparam param="r_v" subst_value="true">$(arg r_v)</rosparam>
+    <rosparam param="r_delta" subst_value="true">$(arg r_delta)</rosparam>
+    <rosparam param="velocity" subst_value="true">$(arg velocity)</rosparam>
+    <rosparam param="world_name" subst_value="true">$(arg world_name)</rosparam>
+    <rosparam param="include_obstacles" subst_value="True">$(arg include_obstacles)</rosparam>
+        <rosparam param="node_type" subst_value="True">$(arg node_type)</rosparam>
 
 </node>
  

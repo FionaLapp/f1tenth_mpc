@@ -19,6 +19,7 @@ from std_msgs.msg import String, Int32MultiArray, Int32
 from rospy.rostime import Duration, Time
 import os
 import time
+import csv
 
 
 class LapTimer():
@@ -34,6 +35,17 @@ class LapTimer():
         self.w_start=rospy.get_param(namespace+'w_start')
         self.z_start=rospy.get_param(namespace+'z_start')
         self.penalty=rospy.get_param(namespace+'penalty')
+       
+        self.log_file_name=rospy.get_param(namespace+'log_file_name', default=None)
+        if self.log_file_name is not None:
+            self.node_type=rospy.get_param(namespace+'node_type')
+            self.r_v=rospy.get_param(namespace+'r_v')
+            self.r_delta=rospy.get_param(namespace+'r_delta')
+            self.n_horizon=rospy.get_param(namespace+'n_horizon')
+            self.velocity=rospy.get_param(namespace+'velocity')
+            self.world_name=rospy.get_param(namespace+'world_name')
+            self.include_obstacles=rospy.get_param(namespace+'include_obstacles')
+        self.laps=[]
         self.setup_node()
         
 
@@ -57,10 +69,12 @@ class LapTimer():
         if self.lap_count<self.max_laps-1:
             self.lap_time=Time.now()-self.start_time
             self.lap_count+=1
+            self.laps.append(self.lap_time.to_sec())
             rospy.loginfo("Success: {} lap(s) completed. Duration: {}s".format(self.lap_count, self.lap_time.to_sec()))
         elif self.lap_count==self.max_laps-1:
             self.lap_time=Time.now()-self.start_time
             self.lap_count+=1
+            self.laps.append(self.lap_time.to_sec())
             rospy.loginfo("Last lap complete. Success: {} lap(s) completed. Duration: {}s".format(self.lap_count, self.lap_time.to_sec()))
             self.do_logging()
         else: #this shouldn't happen
@@ -94,8 +108,36 @@ class LapTimer():
             raise Exception("weird mux: {}".format(data))
     
     def do_logging(self): #write to file, then exit
-        #TODO write to file
-        #os.system("rosnode kill -a")
+        
+        if not self.log_file_name is None: #if the logfile doesn't exist (because the thing isn't called from the python script), we just don't log. Brains, eh?
+            #TODO write to file
+            #note: header is ["node_type","r_v", "r_delta", "n_horizon", "velocity", "world_name", "include obstacles", "lap1", "lap2","lap3", "lap4", "lap5", "collisions", "dnf", "mean_laptime", "std_dev"]
+
+            line_params=[self.node_type, self.r_v, self.r_delta, self.n_horizon, self.velocity, self.world_name, self.include_obstacles]
+           
+            dnf=(self.lap_count<self.max_laps)
+            if not len(self.laps)==0:
+                mean_laptime=np.mean(np.array(self.laps))
+                std_dev=np.std(np.array(self.laps))
+            else:
+                mean_laptime="-"
+                std_dev="-"
+            
+            calculations=[self.collision, dnf, mean_laptime, std_dev]
+            
+            for i in range (self.max_laps-self.lap_count):
+                self.laps.append("-")
+            times=self.laps
+            
+            line=line_params+ times+calculations
+            # write a row to the csv file
+            
+            with open(self.log_file_name, 'a') as f:
+                # create the csv writer
+                writer = csv.writer(f)
+
+                 # write a row to the csv file
+                writer.writerow(line)
         os.system("killall -9 rosmaster")
     
 
