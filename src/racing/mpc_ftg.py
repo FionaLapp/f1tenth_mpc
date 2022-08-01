@@ -61,8 +61,8 @@ class FTGController(mpc_base_code.BaseController):
         
         super().setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
         
-        self.key_pub.publish(String("n"))
-        self.lap_start_time=Time.now()
+        ##self.key_pub.publish(String("n"))
+        ##self.lap_start_time=Time.now()
         self.setup_finished=True
 
         
