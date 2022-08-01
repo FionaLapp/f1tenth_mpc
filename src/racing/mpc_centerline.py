@@ -70,7 +70,7 @@ class ReadCSVController(mpc_base_code.BaseController):
         """
         none
         """
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +2.3*self.curvature*self.v #+(200/self.wall_distance)*self.v
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +1*self.curvature*self.v #+(200/self.wall_distance)*self.v
          
   
 

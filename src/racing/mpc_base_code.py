@@ -336,7 +336,7 @@ class BaseController(ABC):
         none
         """
         #return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +(4/self.wall_distance)*self.v**2 #+(200/self.wall_distance)*self.v
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +1*self.curvature*self.v#(4/self.wall_distance)*self.v**2 #+(200/self.wall_distance)*self.v
         
     @property
     def terminal_cost(self):

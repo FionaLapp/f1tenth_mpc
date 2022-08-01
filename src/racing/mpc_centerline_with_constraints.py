@@ -230,7 +230,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         target_marker_list_x=[]
         target_marker_list_y=[]
         for k in range(self.n_horizon + 1):
-            i=(self.index+2*k)%self.path_length
+            i=(self.index+k)%self.path_length
             template["_tvp", k, "target_x"]=self.path_data_x[i]
             template["_tvp", k, "target_y"] =self.path_data_y[i]
             #vector equation of line
