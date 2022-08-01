@@ -20,6 +20,7 @@ for i in range(len(data_list)):
 x_array=np.linspace(-np.pi, np.pi, num=len(r_array), endpoint=True, retstep=False, dtype=None, axis=0)
 r_array=np.where(r_array<5, r_array, 0*r_array)
 fig=plt.figure(figsize=(6,6))
+
 plt.xlabel("lidar angle (rad)")
 plt.ylabel("lidar range (m)")
 plt.title("Plot of lidar range data vs angle")
