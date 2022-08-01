@@ -162,13 +162,14 @@ class BaseController(ABC):
         params['world_name']=rospy.get_param(namespace+'world_name')
         return params    
     def on_lap_complete(self):
-        if (Time.now()-self.lap_start_time).to_sec()>1: #otherwise it's just really close to the previous one
+        if (Time.now()-self.lap_start_time).to_sec()>10: #otherwise it's just really close to the previous one
             self.lap_start_time=Time.now()
             self.laps_completed+=1
             rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
             self.lap_pub.publish(Int32(self.laps_completed))
         else: 
-            rospy.loginfo("Do you seriously want me to believe you completed a lap in {}s?".format((self.lap_start_time-Time.now()).to_sec()))
+            pass 
+            #rospy.loginfo("Do you seriously want me to believe you completed a lap in {}s?".format((self.lap_start_time-Time.now()).to_sec()))
 
     def make_mpc_step(self, x_state):
         if not self.setup_finished or not self.controller.flags['setup']:

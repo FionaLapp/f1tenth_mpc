@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   
-  <arg name="world_name" default= "IMS"/>
+  <arg name="world_name" default= "Sochi"/>
   <arg name="x_start" default="0.0"/>
   <arg name="y_start" default="0.0"/>
   <arg name="node_type" default="ftg"/>
@@ -91,8 +91,7 @@
     
      </node> 
 
-  <node pkg="f1tenth_mpc" name="plotter" type="plot_ftg.py" output="screen"></node>
-
+ 
   <!-- Launch RVIZ -->
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>
    

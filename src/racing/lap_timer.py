@@ -68,11 +68,13 @@ class LapTimer():
     def lap_callback(self, data:Int32):    
         if self.lap_count<self.max_laps-1:
             self.lap_time=Time.now()-self.start_time
+            self.start_time=Time.now()
             self.lap_count+=1
             self.laps.append(self.lap_time.to_sec())
             rospy.loginfo("Success: {} lap(s) completed. Duration: {}s".format(self.lap_count, self.lap_time.to_sec()))
         elif self.lap_count==self.max_laps-1:
             self.lap_time=Time.now()-self.start_time
+            self.start_time=Time.now()
             self.lap_count+=1
             self.laps.append(self.lap_time.to_sec())
             rospy.loginfo("Last lap complete. Success: {} lap(s) completed. Duration: {}s".format(self.lap_count, self.lap_time.to_sec()))

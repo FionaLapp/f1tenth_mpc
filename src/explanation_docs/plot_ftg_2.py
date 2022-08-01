@@ -19,11 +19,12 @@ for i in range(len(data_list)):
 
 x_array=np.linspace(-np.pi, np.pi, num=len(r_array), endpoint=True, retstep=False, dtype=None, axis=0)
 r_array=np.where(r_array<5, r_array, 0*r_array)
-fig=plt.figure(figsize=(6,6))
-
-plt.xlabel("lidar angle (rad)")
-plt.ylabel("lidar range (m)")
-plt.title("Plot of lidar range data vs angle")
+fig=plt.figure(figsize=(10,6))
+plt.xticks(fontsize=16)
+plt.yticks(fontsize=16)
+plt.xlabel("lidar angle (rad)", fontsize=18)
+plt.ylabel("lidar range (m)", fontsize=18)
+plt.title("Plot of lidar range data vs angle", fontsize=20)
 plt.plot(x_array, r_array)
 #plt.show()
 plt.savefig(cwd+"/ftg_plot.png")

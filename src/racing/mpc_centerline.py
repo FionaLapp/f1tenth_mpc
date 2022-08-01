@@ -56,7 +56,7 @@ class ReadCSVController(mpc_base_code.BaseController):
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
             closest=(distances_to_current_point.argmin()+2) #not actually the closest because we want to always be ahead
             self.index= closest %self.path_length
-            if closest ==self.path_length:
+            if np.abs(closest -self.path_length) <10:
                 self.on_lap_complete()
             #rospy.loginfo(self.index)
             self.make_mpc_step(self.state)

@@ -61,8 +61,8 @@ class FTGController(mpc_base_code.BaseController):
         
         super().setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
         
-        ##self.key_pub.publish(String("n"))
-        ##self.lap_start_time=Time.now()
+        self.key_pub.publish(String("n"))
+        self.lap_start_time=Time.now()
         self.setup_finished=True
 
         
@@ -89,7 +89,7 @@ class FTGController(mpc_base_code.BaseController):
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
             closest=(distances_to_current_point.argmin()+2) #not actually the closest because we want to always be ahead
             self.index= closest %self.path_length
-            if closest ==self.path_length:
+            if np.abs(closest - self.path_length)<10:
                 super().on_lap_complete()
             self.state= np.array([x,y, phi])
             self.make_mpc_step(self.state)
