@@ -16,7 +16,7 @@ with open(csv_filepath, 'w') as f:
 
     # write a row to the csv file
     writer.writerow(header)
-param_list=[0.1,0.2,0.3,0.4,0.5,1.0,1.5,2.0]
+param_list=[0.1,0.2,0.3,0.4]
 print(param_list)
 for r in param_list: #timeout: 5 min (60*5/5)
     if rosgraph.is_master_online(): # Checks the master uri and results boolean (True or False)

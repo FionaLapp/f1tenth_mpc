@@ -227,7 +227,14 @@ class FTGController(mpc_base_code.BaseController):
             template["_tvp", k, "wall_distance"] =self.distance_to_wall_ahead
             
         return template     
-  
+    @property
+    def stage_cost(self):
+        """
+        none
+        """
+        #return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +(4/self.wall_distance)*self.v**2 #+(200/self.wall_distance)*self.v
+     
 
 def main(args):
     

@@ -96,6 +96,8 @@ class LapTimer():
             
             self.lap_time=Time.now()-self.start_time
             self.collision+=1
+            if self.collision>=3:
+                self.do_logging()
             initialpose=PoseWithCovarianceStamped()
             initialpose.pose.pose.position.x=self.x_start
             initialpose.pose.pose.position.y=self.y_start
