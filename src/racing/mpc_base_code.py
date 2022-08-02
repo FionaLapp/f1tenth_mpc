@@ -278,6 +278,7 @@ class BaseController(ABC):
 
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=self.params['r_v'])
+        print(self.params['r_delta'])
         self.controller.set_rterm(delta=self.params['r_delta'])
         
         self.controller.setup()
@@ -314,7 +315,7 @@ class BaseController(ABC):
             
             template["_tvp", k, "measured_steering_angle"] =self.current_steering_angle
             try:
-                template["_tvp", k, "curvature"] =self.curvature_array[i]
+                template["_tvp", k, "curvature"] =self.curvature_array[i%self.path_length]
             except Exception:
                 pass #ftg doesn't have curvature array
             #print("phi:{}".format(self.state[2]))

@@ -55,7 +55,7 @@ class ReadCSVController(mpc_base_code.BaseController):
             #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
             closest=(distances_to_current_point.argmin()+2) #not actually the closest because we want to always be ahead
-            self.index= closest %self.path_length
+            self.index= closest+1 %self.path_length
             if np.abs(closest -self.path_length) <10:
                 self.on_lap_complete()
             #rospy.loginfo(self.index)
