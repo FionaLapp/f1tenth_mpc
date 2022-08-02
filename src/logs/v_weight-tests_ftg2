@@ -1,0 +1,8 @@
+node_type,velocity_weight,r_v,r_delta,n_horizon,velocity,world_name,include obstacles,lap1,lap2,lap3,collisions,dnf,mean_laptime,std_dev
+ftg,1,0.2,0.1,5,7,Sochi,False,-,-,-,3,True,-,-
+ftg,2,0.2,0.1,5,7,Sochi,False,-,-,-,3,True,-,-
+ftg,4,0.2,0.1,5,7,Sochi,False,68.48610115,68.429394007,68.489243746,0,False,68.46824630100001,0.02750266095249197
+ftg,5,0.2,0.1,5,7,Sochi,False,69.688915252,69.616515875,69.564482688,0,False,69.623304605,0.05102568560482285
+ftg,6,0.2,0.1,5,7,Sochi,False,-,-,-,3,True,-,-
+ftg,8,0.2,0.1,5,7,Sochi,False,-,-,-,3,True,-,-
+ftg,10,0.2,0.1,5,7,Sochi,False,-,-,-,3,True,-,-

@@ -16,7 +16,7 @@ with open(csv_filepath, 'w') as f:
 
     # write a row to the csv file
     writer.writerow(header)
-param_list=[5]
+param_list=[1,2,4,5,6,8,10]
 print(param_list)
 for r in param_list: #timeout: 5 min (60*5/5)
     print(r)
