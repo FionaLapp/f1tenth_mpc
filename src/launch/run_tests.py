@@ -8,7 +8,7 @@ import sys
 # open the file in the write mode
 cwd=sys.path[0]
 print(cwd)
-csv_filepath=cwd+"/../logs/r_delta_tests_centerline_2"
+csv_filepath=cwd+"/../logs/r_v_tests_centerline"
 header=["node_type","velocity_weight","r_v", "r_delta", "n_horizon", "velocity", "world_name", "include obstacles", "lap1", "lap2","lap3", "collisions", "dnf", "mean_laptime", "std_dev"]
 with open(csv_filepath, 'w') as f:
     # create the csv writer
@@ -23,7 +23,7 @@ for r in param_list: #timeout: 5 min (60*5/5)
     if rosgraph.is_master_online(): # Checks the master uri and results boolean (True or False)
         print('ROS MASTER is Online')
     else:
-        os.system("roslaunch f1tenth_mpc full_simulation.launch node_type:=centerline velocity:='7' r_delta:={} log_file_name:={}".format(r, csv_filepath))
+        os.system("roslaunch f1tenth_mpc full_simulation.launch node_type:=centerline velocity:='7' r_v:={} log_file_name:={}".format(r, csv_filepath))
 
     
 os.system("killall -9 rosmaster")

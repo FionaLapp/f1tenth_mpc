@@ -7,7 +7,7 @@
   <arg name="node_type" default="centerline"/>
   <arg name="n_horizon" default="5"/>
   <arg name="r_v" default="1"/>
-  <arg name="r_delta" /> <!--default="0.2"/>-->
+  <arg name="r_delta" default="1"/>
   <arg name="velocity" default="5"/>
   <arg name="velocity_weight" if="$(eval arg ('node_type')=='ftg')" default="4"/>
   <arg name="velocity_weight" if="$(eval arg ('node_type')=='centerline')" default="1.5"/>
