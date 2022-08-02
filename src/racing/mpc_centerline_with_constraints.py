@@ -112,7 +112,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             #update target: find the point on the centerline fiile closest to the current position, then go two further
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
             closest=(distances_to_current_point.argmin()+2) #not actually the closest because we want to always be ahead
-            self.index= closest %self.path_length
+            self.index= closest+1 %self.path_length
             if np.abs(closest - self.path_length)<10:
                 super().on_lap_complete()
             self.make_mpc_step(self.state)
@@ -150,6 +150,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.constraint_p_x_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_p_x_upper', shape=(1,1))
         self.constraint_p_y_lower=self.model.set_variable(var_type='_tvp', var_name='constraint_p_y_lower', shape=(1,1))
         self.constraint_p_y_upper=self.model.set_variable(var_type='_tvp', var_name='constraint_p_y_upper', shape=(1,1))
+        self.curvature=self.model.set_variable(var_type='_tvp', var_name='curvature', shape=(1,1))
         
 
         self.previous_delta=self.model.set_variable(var_type='_tvp', var_name='previous_delta', shape=(1,1))
@@ -233,6 +234,10 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             i=(self.index+k)%self.path_length
             template["_tvp", k, "target_x"]=self.path_data_x[i]
             template["_tvp", k, "target_y"] =self.path_data_y[i]
+            try:
+                template["_tvp", k, "curvature"] =self.curvature_array[i%self.path_length]
+            except Exception:
+                pass
             #vector equation of line
             #r=p+lambda*t (r: any point on line, p: knownn point on line, lambda: param, t: tangent to line)
             #i.e.

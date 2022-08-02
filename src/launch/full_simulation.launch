@@ -8,7 +8,7 @@
   <arg name="n_horizon" default="5"/>
   <arg name="r_v" default="1"/>
   <arg name="r_delta" default="1"/>
-  <arg name="velocity" default="5"/>
+  <arg name="velocity" default="7"/>
   <arg name="velocity_weight" if="$(eval arg ('node_type')=='ftg')" default="4"/>
   <arg name="velocity_weight" if="$(eval arg ('node_type')=='centerline')" default="1.5"/>
   <arg name="velocity_weight" if="$(eval arg ('node_type')=='centerline_with_constraints')" default="1"/>
@@ -101,7 +101,7 @@
   <!-- Launch RVIZ -->
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth_mpc)/src/launch/simulator.rviz" output="screen"/>
    
-  
-    
-  	 
+  <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_server">
+             	<rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
+ </node> 
 </launch>
