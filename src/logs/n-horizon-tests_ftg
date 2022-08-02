@@ -1,7 +1,7 @@
-node_type,r_v,r_delta,n_horizon,velocity,world_name,include obstacles,lap1,lap2,lap3,collisions,dnf,mean_laptime,std_dev
-ftg,0.2,0.1,4,7,Sochi,False,75.921845198,75.766664267,75.769228697,0,False,75.819246054,0.07255610398147462
-ftg,0.2,0.1,5,7,Sochi,False,68.504807711,68.359698057,68.534597635,0,False,68.466367801,0.07640107157516414
-ftg,0.2,0.1,6,7,Sochi,False,-,-,-,3,True,-,-
-ftg,0.2,0.1,7,7,Sochi,False,-,-,-,3,True,-,-
-ftg,0.2,0.1,8,7,Sochi,False,-,-,-,3,True,-,-
-ftg,0.2,0.1,9,7,Sochi,False,-,-,-,3,True,-,-
+node_type,velocity_weight,r_v,r_delta,n_horizon,velocity,world_name,include obstacles,lap1,lap2,lap3,collisions,dnf,mean_laptime,std_dev
+ftg,4,0.2,0.1,4,7,Sochi,False,75.921845198,75.766664267,75.769228697,0,False,75.819246054,0.07255610398147462
+ftg,4,0.2,0.1,5,7,Sochi,False,68.504807711,68.359698057,68.534597635,0,False,68.466367801,0.07640107157516414
+ftg,4,0.2,0.1,6,7,Sochi,False,-,-,-,3,True,-,-
+ftg,4,0.2,0.1,7,7,Sochi,False,-,-,-,3,True,-,-
+ftg,4,0.2,0.1,8,7,Sochi,False,-,-,-,3,True,-,-
+ftg,4,0.2,0.1,9,7,Sochi,False,-,-,-,3,True,-,-

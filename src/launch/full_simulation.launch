@@ -9,6 +9,10 @@
   <arg name="r_v" default="1"/>
   <arg name="r_delta" default="1"/>
   <arg name="velocity" default="5"/>
+  <arg name="velocity_weight" if="$(eval arg ('node_type')=='ftg')" default="4"/>
+  <arg name="velocity_weight" if="$(eval arg ('node_type')=='centerline')" default="1"/>
+  <arg name="velocity_weight" if="$(eval arg ('node_type')=='centerline_with_constraints')" default="1"/>
+  
   <arg name="log_file_name" default= ""/> <!--don't reset this unless the file exists-->
   <arg name="include_obstacles" default="false"/>
   <!--this is for Sochi: start angle -2.054 rad-->
@@ -76,6 +80,7 @@
     <rosparam param="world_name" subst_value="true">$(arg world_name)</rosparam>
     <rosparam param="include_obstacles" subst_value="True">$(arg include_obstacles)</rosparam>
         <rosparam param="node_type" subst_value="True">$(arg node_type)</rosparam>
+    <rosparam param="velocity_weight" subst_value="True">$(arg velocity_weight)</rosparam>
 
 </node>
  
@@ -88,7 +93,8 @@
     <rosparam param="r_v" subst_value="true">$(arg r_v)</rosparam>
     <rosparam param="r_delta" subst_value="true">$(arg r_delta)</rosparam>
     <rosparam param="velocity" subst_value="true">$(arg velocity)</rosparam>
-    
+    <rosparam param="velocity_weight" subst_value="True">$(arg velocity_weight)</rosparam>
+
      </node> 
 
  

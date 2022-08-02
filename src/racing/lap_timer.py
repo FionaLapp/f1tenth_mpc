@@ -45,6 +45,8 @@ class LapTimer():
             self.velocity=rospy.get_param(namespace+'velocity')
             self.world_name=rospy.get_param(namespace+'world_name')
             self.include_obstacles=rospy.get_param(namespace+'include_obstacles')
+            self.velocity_weight=rospy.get_param(namespace+'velocity_weight')
+
         self.laps=[]
         self.setup_node()
         
@@ -117,7 +119,7 @@ class LapTimer():
             #TODO write to file
             #note: header is ["node_type","r_v", "r_delta", "n_horizon", "velocity", "world_name", "include obstacles", "lap1", "lap2","lap3", "lap4", "lap5", "collisions", "dnf", "mean_laptime", "std_dev"]
 
-            line_params=[self.node_type, self.r_v, self.r_delta, self.n_horizon, self.velocity, self.world_name, self.include_obstacles]
+            line_params=[self.node_type, self.velocity_weight, self.r_v, self.r_delta, self.n_horizon, self.velocity, self.world_name, self.include_obstacles]
            
             dnf=(self.lap_count<self.max_laps)
             if not len(self.laps)==0:

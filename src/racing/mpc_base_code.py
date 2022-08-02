@@ -160,6 +160,7 @@ class BaseController(ABC):
         params['r_delta']=rospy.get_param(namespace+'r_delta')
         params['velocity']=rospy.get_param(namespace+'velocity')
         params['world_name']=rospy.get_param(namespace+'world_name')
+        params['velocity_weight']=rospy.get_param(namespace+"velocity_weight")
         return params    
     def on_lap_complete(self):
         if (Time.now()-self.lap_start_time).to_sec()>10: #otherwise it's just really close to the previous one
@@ -336,7 +337,7 @@ class BaseController(ABC):
         none
         """
         #return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +1*self.curvature*self.v#(4/self.wall_distance)*self.v**2 #+(200/self.wall_distance)*self.v
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +self.params['velocity_weight']*self.curvature*self.v#(4/self.wall_distance)*self.v**2 #+(200/self.wall_distance)*self.v
         
     @property
     def terminal_cost(self):
