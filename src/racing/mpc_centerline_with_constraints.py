@@ -111,7 +111,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             
             #update target: find the point on the centerline fiile closest to the current position, then go two further
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
-            closest=(distances_to_current_point.argmin()+2) #not actually the closest because we want to always be ahead
+            closest=(distances_to_current_point.argmin()+1) #not actually the closest because we want to always be ahead
             self.index= closest+1 %self.path_length
             if np.abs(closest - self.path_length)<10:
                 super().on_lap_complete()
@@ -202,8 +202,8 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
         self.controller.bounds['upper','_u','v'] = max_speed
         
-        self.upper=self.controller.set_nl_cons('upper', self.constraint_t_x*(self.y-self.constraint_p_y_upper)-self.constraint_t_y*(self.x-self.constraint_p_x_upper), ub=0,soft_constraint=True, penalty_term_cons=1e4)
-        self.lower=self.controller.set_nl_cons('lower', -(self.constraint_t_x*(self.y-self.constraint_p_y_lower)-self.constraint_t_y*(self.x-self.constraint_p_x_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        #self.upper=self.controller.set_nl_cons('upper', -(self.constraint_t_x*(self.y-self.constraint_p_y_upper)-self.constraint_t_y*(self.x-self.constraint_p_x_upper)), ub=0,soft_constraint=True, penalty_term_cons=1e4)
+        self.lower=self.controller.set_nl_cons('lower', (self.constraint_t_x*(self.y-self.constraint_p_y_lower)-self.constraint_t_y*(self.x-self.constraint_p_x_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
         
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=self.params['r_v'])
@@ -235,7 +235,8 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             template["_tvp", k, "target_x"]=self.path_data_x[i]
             template["_tvp", k, "target_y"] =self.path_data_y[i]
             try:
-                template["_tvp", k, "curvature"] =self.curvature_array[i%self.path_length]
+                #print(self.curvature_array[i%self.path_length])
+                template["_tvp", k, "curvature"] =self.curvature_array[i+4%self.path_length]
             except Exception:
                 pass
             #vector equation of line
@@ -257,42 +258,54 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             #I'm then going to figure out which n (left or right) belongs to the upper and which to lower
             #bound by (get ready for it)  comparing them and deducing, with all the two-and-a-half braincells 
             #I have left, that the larger one belongs to the upper bound. Magic.
-            template["_tvp", k, "constraint_t_x"] = self.path_tangent_x[i]
-            template["_tvp", k, "constraint_t_y"] = self.path_tangent_y[i]
-            if self.path_tangent_x[i]==0:
+            j=i#(i-k)%self.path_length
+            template["_tvp", k, "constraint_t_x"] = self.path_tangent_x[j]
+            template["_tvp", k, "constraint_t_y"] = self.path_tangent_y[j]
+            #print(self.path_tangent_x[i])
+            if abs(self.path_tangent_x[j])==0:
                 print("x tangent=0")
 
-                if self.path_tangent_y[i]==0:
+                if self.path_tangent_y[j]==0:
                     raise Exception("Tangent vector to wall is 0 vector")
-                y_l=self.path_data_y_l[i]
-                y_r=self.path_data_y_r[i]
+                y_l=self.path_data_y_l[j]
+                y_r=self.path_data_y_r[j]
                 if y_l>y_r:
+                    p_y_lower=self.path_data_y_r[j]
+                    p_x_upper=self.path_data_y_l[j]
                     
-                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_l[i]
-                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_r[i]
-                else:
-                    template["_tvp", k, "constraint_p_y_upper"] = self.path_data_y_r[i]
-                    template["_tvp", k, "constraint_p_y_lower"] = self.path_data_y_l[i]
+                    p_x_lower=self.x
+                    p_x_upper=self.x
+                    template["_tvp", k, "constraint_p_x_lower"] = self.x
+                    template["_tvp", k, "constraint_p_x_upper"] = self.x
                 
+                else:
+                    p_y_upper= self.path_data_y_r[j]
+                    p_y_lower= self.path_data_y_l[j]
+                    template["_tvp", k, "constraint_p_x_lower"] = self.x
+                    template["_tvp", k, "constraint_p_x_upper"] = self.x
+                    p_x_lower=self.x
+                    p_x_upper=self.x
+                template["_tvp", k, "constraint_p_y_upper"] = p_y_upper
+                template["_tvp", k, "constraint_p_y_lower"] = p_y_lower
             else:
                 
                 #calculate y-value of x-value corresponding to current car position. if current car y < line y --> point below line
-                n_left=(self.path_data_y_l[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_l[i])
-                n_right=(self.path_data_y_r[i]-(self.path_tangent_y[i]/self.path_tangent_x[i])*self.path_data_x_r[i])
+                n_left=(self.path_data_y_l[i]-(self.path_tangent_y[j]/self.path_tangent_x[j])*self.path_data_x_l[j])
+                n_right=(self.path_data_y_r[i]-(self.path_tangent_y[j]/self.path_tangent_x[j])*self.path_data_x_r[j])
                 if n_left>n_right:
                     #print("n_left:{}, n_right:{}".format(n_left, n_right))
                     #print("left wall above car")
-                    p_x_upper= self.path_data_x_l[i]
-                    p_x_lower = self.path_data_x_r[i]
-                    p_y_upper = self.path_data_y_l[i]
-                    p_y_lower = self.path_data_y_r[i]
+                    p_x_upper= self.path_data_x_l[j]
+                    p_x_lower = self.path_data_x_r[j]
+                    p_y_upper = self.path_data_y_l[j]
+                    p_y_lower = self.path_data_y_r[j]
                 elif n_left<n_right:
                     #print("right wall above car")
                     #print("n_left:{}, n_right:{}".format(n_left, n_right))
-                    p_x_upper= self.path_data_x_r[i]
-                    p_x_lower= self.path_data_x_l[i]
-                    p_y_upper= self.path_data_y_r[i]
-                    p_y_lower = self.path_data_y_l[i]
+                    p_x_upper= self.path_data_x_r[j]
+                    p_x_lower= self.path_data_x_l[j]
+                    p_y_upper= self.path_data_y_r[j]
+                    p_y_lower = self.path_data_y_l[j]
                 else: #this should never happen because then the lines are identical
                     raise Exception("n_left=n_right")
                 template["_tvp", k, "constraint_p_x_upper"] = p_x_upper
@@ -316,9 +329,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
                 target_marker_list_y.append( self.path_data_y[i])
                 #plotting lines:
                 factor=5 #completely random length factor for displayed line
-                x_line_list.extend([p_x_upper-factor*self.path_tangent_x[i], p_x_upper+factor*self.path_tangent_x[i]])
+                #x_line_list.extend([p_x_upper-factor*self.path_tangent_x[j], p_x_upper+factor*self.path_tangent_x[j]])
                 x_line_list.extend( [p_x_lower-factor*self.path_tangent_x[i], p_x_lower+factor*self.path_tangent_x[i]])
-                y_line_list.extend([p_y_upper-factor*self.path_tangent_y[i], p_y_upper+factor*self.path_tangent_y[i]])
+                #y_line_list.extend([p_y_upper-factor*self.path_tangent_y[j], p_y_upper+factor*self.path_tangent_y[j]])
                 y_line_list.extend( [p_y_lower-factor*self.path_tangent_y[i], p_y_lower+factor*self.path_tangent_y[i]])
         
         if self.add_markers:
@@ -336,7 +349,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         none
         """
         #return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +13*self.measured_steering_angle*self.v #+(200/self.wall_distance)*self.v
-        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +self.params['velocity_weight']*self.curvature*self.v#(4/self.wall_distance)*self.v**2 #+(200/self.wall_distance)*self.v
+        return (self.target_x - self.x) ** 2 + (self.target_y - self.y) ** 2 +self.params['velocity_weight']*(self.curvature)*self.v#(4/self.wall_distance)*self.v**2 #+(200/self.wall_distance)*self.v
       
 
   
