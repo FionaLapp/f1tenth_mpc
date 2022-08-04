@@ -191,7 +191,7 @@ class BaseController(ABC):
         delta=u[0]
         self.current_steering_angle=delta
         v=u[1]
-        #rospy.loginfo("{}, {}".format(u[0], u[1]))
+        rospy.loginfo("{}, {}".format(u[0], u[1]))
         #setup drive message
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()

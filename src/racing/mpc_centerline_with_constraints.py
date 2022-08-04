@@ -202,7 +202,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
         self.controller.bounds['upper','_u','v'] = max_speed
         
-        #self.upper=self.controller.set_nl_cons('upper', -(self.constraint_t_x*(self.y-self.constraint_p_y_upper)-self.constraint_t_y*(self.x-self.constraint_p_x_upper)), ub=0,soft_constraint=True, penalty_term_cons=1e4)
+        self.upper=self.controller.set_nl_cons('upper', -(self.constraint_t_x*(self.y-self.constraint_p_y_upper)-self.constraint_t_y*(self.x-self.constraint_p_x_upper)), ub=0,soft_constraint=True, penalty_term_cons=1e4)
         self.lower=self.controller.set_nl_cons('lower', (self.constraint_t_x*(self.y-self.constraint_p_y_lower)-self.constraint_t_y*(self.x-self.constraint_p_x_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
         
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
@@ -236,7 +236,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             template["_tvp", k, "target_y"] =self.path_data_y[i]
             try:
                 #print(self.curvature_array[i%self.path_length])
-                template["_tvp", k, "curvature"] =self.curvature_array[i+4%self.path_length]
+                template["_tvp", k, "curvature"] =self.curvature_array[i%self.path_length]
             except Exception:
                 pass
             #vector equation of line
