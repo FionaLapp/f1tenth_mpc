@@ -56,9 +56,8 @@ class ReadCSVController(mpc_base_code.BaseController):
         distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
         closest=(distances_to_current_point.argmin()+1) #not actually the closest because we want to always be ahead
         
-        s=(self.path_data_s[closest%self.path_length]+self.n_horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
-        print(s)
-        self.index=self.find_closest_index(self.path_data_s, s)
+        #s=(self.path_data_s[closest%self.path_length]+self.n_horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
+        self.index=closest#self.find_closest_index(self.path_data_s, s)
         
         if np.abs(closest -self.path_length) <10:
             self.on_lap_complete()

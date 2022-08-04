@@ -115,7 +115,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             closest=(distances_to_current_point.argmin()+1) #not actually the closest because we want to always be ahead
             # s=(self.path_data_s[closest%self.path_length]+self.n_horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
             # self.index=self.find_closest_index(self.path_data_s, s)
-            self.index=self.get_next_index(closest, self.n_horizon)
+            self.index=closest#self.get_next_index(closest, self.n_horizon)
             #self.index= closest+1 %self.path_length
             if np.abs(closest - self.path_length)<10:
                 super().on_lap_complete()
@@ -125,10 +125,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         except AttributeError:
             rospy.loginfo("Initialisation not finished")
   
-    def get_next_index(self, current_index, horizon):
-        s=(self.path_data_s[current_index%self.path_length]+horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
-        return self.find_closest_index(self.path_data_s, s)
-   
+
 
     def setup_mpc(self, max_speed, time_step, n_horizon):
         rospy.loginfo("setting up MPC from child class")
@@ -240,7 +237,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         target_marker_list_x=[]
         target_marker_list_y=[]
         for k in range(self.n_horizon + 1):
-            i=(self.index)%self.path_length
+            i=self.get_next_index(self.index, k)#(self.index)%self.path_length
             template["_tvp", k, "target_x"]=self.path_data_x[i]
             template["_tvp", k, "target_y"] =self.path_data_y[i]
             try:
