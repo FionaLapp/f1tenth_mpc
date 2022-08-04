@@ -17,6 +17,8 @@ import os.path
 import matplotlib.pyplot as plt
 import casadi
 
+import bisect
+
 # Import do_mpc package:
 from do_mpc.model import Model
 from do_mpc.controller import MPC
@@ -191,6 +193,7 @@ class BaseController(ABC):
         delta=u[0]
         self.current_steering_angle=delta
         v=u[1]
+        self.current_velocity=u[1]
         rospy.loginfo("{}, {}".format(u[0], u[1]))
         #setup drive message
         drive_msg = AckermannDriveStamped()
@@ -221,7 +224,7 @@ class BaseController(ABC):
         rospy.loginfo("setting up MPC")
         model_type = 'continuous' # either 'discrete' or 'continuous'
         self.model = Model(model_type)
-
+        self.max_speed=max_speed
         #state
         self.x = self.model.set_variable(var_type='_x', var_name='x', shape=(1,1)) #global position x
         self.y =self.model.set_variable(var_type='_x', var_name='y', shape=(1,1)) #global position y
@@ -297,8 +300,17 @@ class BaseController(ABC):
         rospy.loginfo("MPC set up finished")
 
     
-        
-  
+    def get_next_index(self, current_index, horizon):
+        s=(self.path_data_s[current_index%self.path_length]+horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
+        return self.find_closest_index(self.path_data_s, s)
+       
+    def find_closest_index(self,a, x): #from https://stackoverflow.com/questions/56335315/in-a-python-list-which-is-sorted-find-the-closest-value-to-target-value-and-its
+        i = bisect.bisect_left(a, x)
+        if i >= len(a):
+            i = len(a) - 1
+        elif i and a[i] - x > x - a[i - 1]:
+            i = i - 1
+        return (i)
 
     def prepare_goal_template(self, t_now):
         
@@ -306,7 +318,7 @@ class BaseController(ABC):
         target_x_list=[]
         target_y_list=[]
         for k in range(self.n_horizon + 1):
-            i=(self.index+k)%self.path_length
+            i=(self.index)%self.path_length
             template["_tvp", k, "target_x"]=self.path_data_x[i]
             template["_tvp", k, "target_y"] =self.path_data_y[i]
             target_x_list.append(self.path_data_x[i])

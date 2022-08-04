@@ -113,9 +113,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             #update target: find the point on the centerline fiile closest to the current position, then go two further
             distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
             closest=(distances_to_current_point.argmin()+1) #not actually the closest because we want to always be ahead
-            s=(self.path_data_s[closest%self.path_length]+self.n_horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
-            self.index=self.find_closest_index(self.path_data_s, s)
-
+            # s=(self.path_data_s[closest%self.path_length]+self.n_horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
+            # self.index=self.find_closest_index(self.path_data_s, s)
+            self.index=self.get_next_index(closest, self.n_horizon)
             #self.index= closest+1 %self.path_length
             if np.abs(closest - self.path_length)<10:
                 super().on_lap_complete()
@@ -125,14 +125,10 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         except AttributeError:
             rospy.loginfo("Initialisation not finished")
   
-
-    def find_closest_index(self,a, x): #from https://stackoverflow.com/questions/56335315/in-a-python-list-which-is-sorted-find-the-closest-value-to-target-value-and-its
-        i = bisect.bisect_left(a, x)
-        if i >= len(a):
-            i = len(a) - 1
-        elif i and a[i] - x > x - a[i - 1]:
-            i = i - 1
-        return (i)
+    def get_next_index(self, current_index, horizon):
+        s=(self.path_data_s[current_index%self.path_length]+horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
+        return self.find_closest_index(self.path_data_s, s)
+   
 
     def setup_mpc(self, max_speed, time_step, n_horizon):
         rospy.loginfo("setting up MPC from child class")
@@ -215,8 +211,8 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.controller.bounds['lower','_u','v'] = 0 #not going backwards
         self.controller.bounds['upper','_u','v'] = max_speed
         
-        #self.upper=self.controller.set_nl_cons('upper', -(self.constraint_t_x*(self.y-self.constraint_p_y_upper)-self.constraint_t_y*(self.x-self.constraint_p_x_upper)), ub=0,soft_constraint=True, penalty_term_cons=1e4)
-        #self.lower=self.controller.set_nl_cons('lower', (self.constraint_t_x*(self.y-self.constraint_p_y_lower)-self.constraint_t_y*(self.x-self.constraint_p_x_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
+        self.upper=self.controller.set_nl_cons('upper', -(self.constraint_t_x*(self.y-self.constraint_p_y_upper)-self.constraint_t_y*(self.x-self.constraint_p_x_upper)), ub=0,soft_constraint=True, penalty_term_cons=1e4)
+        self.lower=self.controller.set_nl_cons('lower', (self.constraint_t_x*(self.y-self.constraint_p_y_lower)-self.constraint_t_y*(self.x-self.constraint_p_x_lower)), ub=0, soft_constraint=True, penalty_term_cons=1e4)
         
         self.controller.set_objective(lterm=self.stage_cost, mterm=self.terminal_cost)
         self.controller.set_rterm(v=self.params['r_v'])
