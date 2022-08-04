@@ -259,6 +259,7 @@ class BaseController(ABC):
         suppress_ipopt = {'ipopt.print_level':0, 'ipopt.sb': 'yes', 'print_time':0}
         self.controller.set_param(nlpsol_opts = suppress_ipopt)
         self.n_horizon=n_horizon
+        self.time_step=time_step
         #optimiser parameters
         setup_mpc = {
             'n_horizon': self.n_horizon,
