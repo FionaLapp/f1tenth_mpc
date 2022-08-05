@@ -43,29 +43,29 @@ class ReadCSVController(mpc_base_code.BaseController):
         """
         Could be from any source of localisation (e.g. odometry or lidar)---> adapt get_state_from_data metod accordingly
         """
-        #try:#update current state
+        try:#update current state
             
-        self.previous_delta=self.state[2]
-        x=data.pose.pose.position.x
-        y=data.pose.pose.position.y
-        orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
-        (roll, pitch, phi) = euler_from_quaternion (orientation_list)
-        #rospy.loginfo("{}, {}, {}".format(x, y, phi))
-        self.state= np.array([x,y, phi])
-        
-        #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
-        distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
-        closest=(distances_to_current_point.argmin()+1) #not actually the closest because we want to always be ahead
-        
-        #s=(self.path_data_s[closest%self.path_length]+self.n_horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
-        self.index=closest#self.find_closest_index(self.path_data_s, s)
-        
-        if np.abs(closest -self.path_length) <10:
-            self.on_lap_complete()
-        #rospy.loginfo(self.index)
-        self.make_mpc_step(self.state)
-        # except AttributeError:
-        #     pass
+            self.previous_delta=self.state[2]
+            x=data.pose.pose.position.x
+            y=data.pose.pose.position.y
+            orientation_list=[data.pose.pose.orientation.x, data.pose.pose.orientation.y, data.pose.pose.orientation.z, data.pose.pose.orientation.w]
+            (roll, pitch, phi) = euler_from_quaternion (orientation_list)
+            #rospy.loginfo("{}, {}, {}".format(x, y, phi))
+            self.state= np.array([x,y, phi])
+            
+            #update target: use the distance already travelled and look it's index up in the csv data, then, in the tvp template, use the index to find the next target points
+            distances_to_current_point=(self.path_data_x-self.state[0])**2+(self.path_data_y-self.state[1])**2
+            closest=(distances_to_current_point.argmin()+1) #not actually the closest because we want to always be ahead
+            
+            #s=(self.path_data_s[closest%self.path_length]+self.n_horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
+            self.index=closest#self.find_closest_index(self.path_data_s, s)
+            
+            if np.abs(closest -self.path_length) <10:
+                self.on_lap_complete()
+            #rospy.loginfo(self.index)
+            self.make_mpc_step(self.state)
+        except AttributeError:
+             pass
             #rospy.loginfo("Initialisation not finished")
 
     
