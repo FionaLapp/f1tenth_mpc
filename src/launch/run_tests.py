@@ -8,7 +8,7 @@ import sys
 # open the file in the write mode
 cwd=sys.path[0]
 print(cwd)
-csv_filepath=cwd+"/../logs/r_v_centerline"
+csv_filepath=cwd+"/../logs/r_v_centerline2"
 header=["node_type","velocity_weight","r_v", "r_delta", "n_horizon", "velocity", "world_name", "include obstacles", "lap1", "lap2","lap3", "collisions", "dnf", "mean_laptime", "std_dev"]
 with open(csv_filepath, 'w') as f:
     # create the csv writer
@@ -16,7 +16,7 @@ with open(csv_filepath, 'w') as f:
 
     # write a row to the csv file
     writer.writerow(header)
-param_list=[0.1,0.2,0.3,0.4,0.5,1.0,1.5,2.0]
+param_list=[0.3, 1.0]
 print(param_list)
 for r in param_list: #timeout: 5 min (60*5/5)
     print(r)
