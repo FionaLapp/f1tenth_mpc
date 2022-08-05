@@ -12,7 +12,7 @@ import seaborn as sns
 
 cwd=sys.path[0]
 print(cwd)
-plot_var="r_delta"
+plot_var="n_horizon"
 csv_filepath=cwd+"/../logs/"+plot_var+"_tests"
 
 # fig, axs = plt.subplots(1, 1, figsize=(6, 6))
@@ -20,6 +20,7 @@ csv_filepath=cwd+"/../logs/"+plot_var+"_tests"
 # # Add some labels
 fig, ax = plt.subplots(1, 1, figsize=(6, 6))
 df=pd.read_csv(csv_filepath)
+df = df.drop(df[df.dnf==True].index)
 #label_text="Constants:"
 #fig.text(0.5, 0.08, label_text, fontsize=10, ha='center', va='bottom')
 # Save figure
@@ -29,7 +30,7 @@ df=pd.read_csv(csv_filepath)
 df_pivot = pd.pivot_table(
 	df,
 	values="mean_laptime",
-	index="r_delta",
+	index=plot_var,
 	columns="node_type"
 )
 
@@ -37,7 +38,7 @@ df_pivot = pd.pivot_table(
 yerr=pd.pivot_table(
 	df,
 	values="std_dev",
-	index="r_delta",
+	index=plot_var,
 	columns="node_type"
 )
 df_pivot.plot(kind="bar", yerr=yerr, ax=ax)
@@ -47,11 +48,11 @@ df_pivot.plot(kind="bar", yerr=yerr, ax=ax)
 # Change the plot dimensions (width, height)
 #fig.set_size_inches(7, 6)
 # Change the axes labels
-ax.set_xlabel("r_delta")
+ax.set_xlabel(plot_var)
 ax.set_ylabel("Mean Lap time (s)")
-plt.title("Mean lap time for varying values of r_delta")
-plt.figtext(0.5, -0.3, "Constants:", fontdict=None)
+plt.title("Mean lap time for varying values of "+ plot_var)
+#plt.figtext(0.5, -0.3, "Constants:", fontdict=None)
 #ax.annotate("constants", ())
-plt.ylim(70, 73)
+plt.ylim(65, 80)
 
 fig.savefig(cwd+"/"+plot_var+".png")
