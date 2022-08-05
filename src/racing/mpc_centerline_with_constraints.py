@@ -335,9 +335,9 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
                 target_marker_list_y.append( self.path_data_y[i])
                 #plotting lines:
                 factor=5 #completely random length factor for displayed line
-                #x_line_list.extend([p_x_upper-factor*self.path_tangent_x[j], p_x_upper+factor*self.path_tangent_x[j]])
+                x_line_list.extend([p_x_upper-factor*self.path_tangent_x[j], p_x_upper+factor*self.path_tangent_x[j]])
                 x_line_list.extend( [p_x_lower-factor*self.path_tangent_x[i], p_x_lower+factor*self.path_tangent_x[i]])
-                #y_line_list.extend([p_y_upper-factor*self.path_tangent_y[j], p_y_upper+factor*self.path_tangent_y[j]])
+                y_line_list.extend([p_y_upper-factor*self.path_tangent_y[j], p_y_upper+factor*self.path_tangent_y[j]])
                 y_line_list.extend( [p_y_lower-factor*self.path_tangent_y[i], p_y_lower+factor*self.path_tangent_y[i]])
         
         if self.add_markers:

@@ -52,6 +52,7 @@ class BaseController(ABC):
         self.laps_completed=0
         self.current_steering_angle=0
         self.add_markers=add_markers
+        self.current_velocity=0
         self.params=self.get_params()
         self.read_desired_path()
         self.setup_node()
@@ -329,7 +330,7 @@ class BaseController(ABC):
             
             template["_tvp", k, "measured_steering_angle"] =self.current_steering_angle
             try:
-                template["_tvp", k, "curvature"] =self.curvature_array[i%self.path_length]
+                template["_tvp", k, "curvature"] =self.curvature_array[(i+3)%self.path_length]
             except Exception:
                 pass #ftg doesn't have curvature array
             #print("phi:{}".format(self.state[2]))

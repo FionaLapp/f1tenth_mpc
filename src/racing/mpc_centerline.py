@@ -34,7 +34,8 @@ class ReadCSVController(mpc_base_code.BaseController):
         
         
         
-       
+     #roslaunch f1tenth_mpc full_simulation.launch node_type:=centerline velocity_weight:=2 velocity:=7 r_delta:=0.1 n_horizon:=5
+  
 
     
 
