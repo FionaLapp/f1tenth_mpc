@@ -1,0 +1,5 @@
+node_type,velocity_weight,r_v,r_delta,n_horizon,velocity,world_name,include obstacles,lap1,lap2,lap3,collisions,dnf,mean_laptime,std_dev
+centerline_with_constraints,1.5,0.6,4.0,4,7,Sochi,False,71.551482439,71.286354304,71.482042551,0,False,71.43995976466667,0.11225403532858651
+centerline_with_constraints,1.5,1.0,4.0,4,7,Sochi,False,71.39088726,71.314112663,71.269548416,0,False,71.32484944633335,0.050114785929064064
+centerline_with_constraints,1.5,1.2,4.0,4,7,Sochi,False,71.23473072,71.223012209,71.262181521,0,False,71.23997481666667,0.016415118296361678
+centerline_with_constraints,1.5,1.4,4.0,4,7,Sochi,False,71.316112757,71.272742749,71.017642021,0,False,71.20216584233334,0.1316738897885529
