@@ -18,6 +18,7 @@ ftg,4,2.0,1,5,7,Sochi,False,71.594092369,71.464123964,71.396077395,0,False,71.48
 centerline_with_constraints,1.5,0.1,4.0,4,7,Sochi,False,-,-,-,3,True,-,-
 centerline_with_constraints,1.5,0.2,4.0,4,7,Sochi,False,-,-,-,3,True,-,-
 centerline_with_constraints,1.5,0.3,4.0,4,7,Sochi,False,-,-,-,3,True,-,-
+centerline_with_constraints,1.5,0.4,4.0,4,7,Sochi,False,-,-,-,3,True,-,-
 centerline_with_constraints,1.5,0.5,4.0,4,7,Sochi,False,-,-,-,3,True,-,-
 centerline_with_constraints,1.5,0.6,4.0,4,7,Sochi,False,71.551482439,71.286354304,71.482042551,0,False,71.43995976466667,0.11225403532858651
 centerline_with_constraints,1.5,0.7,4.0,4,7,Sochi,False,71.468209505,71.404843331,-,3,True,71.436526418,0.03168308700000466
