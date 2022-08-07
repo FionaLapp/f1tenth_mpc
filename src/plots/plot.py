@@ -12,7 +12,7 @@ import seaborn as sns
 
 cwd=sys.path[0]
 print(cwd)
-plot_var="n_horizon"
+plot_var="r_delta"
 csv_filepath=cwd+"/../logs/"+plot_var+"_tests"
 
 # fig, axs = plt.subplots(1, 1, figsize=(6, 6))
@@ -54,5 +54,8 @@ plt.title("Mean lap time for varying values of "+ plot_var)
 #plt.figtext(0.5, -0.3, "Constants:", fontdict=None)
 #ax.annotate("constants", ())
 plt.ylim(65, 80)
+plt.axhline(y=64, xmin=0, xmax= 5/17)
+#plt.hlines(87, 0.1, 1.5, color='red')
+plt.show()
 
-fig.savefig(cwd+"/"+plot_var+".png")
+#fig.savefig(cwd+"/"+plot_var+".png")
