@@ -8,6 +8,7 @@ centerline_with_constraints,1.5,1.0,4.0,3,7,Sochi,False,-,-,-,3,True,-,-
 centerline_with_constraints,1.5,1.0,4.0,4,7,Sochi,False,71.456788779,71.346949577,71.50178504,0,False,71.435174465,0.065032756192
 centerline_with_constraints,1.5,1.0,4.0,5,7,Sochi,False,-,-,-,3,True,-,-
 centerline_with_constraints,1.5,1.0,4.0,6,7,Sochi,False,-,-,-,3,True,-,-
+centerline_with_constraints,1.5,1.0,4.0,7,7,Sochi,False,-,-,-,3,True,-,-
 ftg,4,1,1,3,7,Sochi,False,-,-,-,3,True,-,-
 ftg,4,1,1,4,7,Sochi,False,81.958041429,81.799342632,81.741103888,0,False,81.83282931633333,0.09167512455954649
 ftg,4,1,1,5,7,Sochi,False,70.400732517,70.243724823,70.444395781,1,False,70.36295104033333,0.0861695550663348
