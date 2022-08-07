@@ -1,5 +1,4 @@
 node_type,velocity_weight,r_v,r_delta,n_horizon,velocity,world_name,include obstacles,lap1,lap2,lap3,collisions,dnf,mean_laptime,std_dev
-centerline,1.0,1,0.5,5,7,Sochi,False,-,-,-,3,True,-,-
 centerline,1.6,1,0.5,5,7,Sochi,False,-,-,-,3,True,-,-
 centerline,1.8,1,0.5,5,7,Sochi,False,70.87956047,70.910022021,70.777752399,0,False,70.85577829666666,0.05655679771904208
 centerline,2.0,1,0.5,5,7,Sochi,False,71.742830515,71.360203982,71.401387453,0,False,71.50147398333333,0.17149101260128777
