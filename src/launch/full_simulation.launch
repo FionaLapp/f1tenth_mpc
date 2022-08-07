@@ -62,7 +62,7 @@
 
   <!-- Launch the racecar model -->
   <include file="$(find f1tenth_mpc)/src/launch/racecar_model.launch"/>
-
+<!--
   <node pkg="f1tenth_mpc" name="lap_timer" type="lap_timer.py" output="screen">
    <rosparam command="load" file="$(find f1tenth_mpc)/src/custom_params.yaml"/>
   <rosparam param="x_start" subst_value="True">$(arg x_start)</rosparam>
@@ -83,7 +83,7 @@
     <rosparam param="velocity_weight" subst_value="True">$(arg velocity_weight)</rosparam>
 
 </node>
- 
+ -->
 
 <node pkg="f1tenth_mpc" name="mpc" type="mpc_$(arg node_type).py" output="screen"
   >
