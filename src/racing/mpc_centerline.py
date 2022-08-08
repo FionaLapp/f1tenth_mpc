@@ -22,6 +22,7 @@ sys.path.append('../../')
 #ROS Imports
 import rospy
 from nav_msgs.msg import Odometry
+from std_msgs.msg import String
 from tf.transformations import euler_from_quaternion
 
 import mpc_base_code as mpc_base_code
@@ -59,7 +60,8 @@ class ReadCSVController(mpc_base_code.BaseController):
             
             #s=(self.path_data_s[closest%self.path_length]+self.n_horizon*self.time_step*self.max_speed)%self.path_data_s[self.path_length-1]
             self.index=closest#self.find_closest_index(self.path_data_s, s)
-            
+            if np.abs(self.index-self.plot_index)<5:
+                self.key_pub.publish(String("p"))
             if np.abs(closest -self.path_length) <10:
                 self.on_lap_complete()
             #rospy.loginfo(self.index)

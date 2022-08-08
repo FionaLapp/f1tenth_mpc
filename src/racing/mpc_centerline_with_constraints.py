@@ -117,6 +117,8 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
             # self.index=self.find_closest_index(self.path_data_s, s)
             self.index=closest#self.get_next_index(closest, self.n_horizon)
             #self.index= closest+1 %self.path_length
+            if np.abs(self.index-self.plot_index)<5:
+                self.key_pub.publish(String("p"))
             if np.abs(closest - self.path_length)<10:
                 super().on_lap_complete()
             self.make_mpc_step(self.state)

@@ -123,7 +123,8 @@ class BaseController(ABC):
         self.lap_pub=rospy.Publisher(lap_pub, Int32, queue_size=5)
         
         self.key_sub=rospy.Subscriber(key_pub, String, self.key_callback)
-        
+        self.plot_index=500
+
     def key_callback(self, data:String):
         if data.data=="p":
             self.plot_mpc()   
