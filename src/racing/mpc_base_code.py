@@ -123,7 +123,7 @@ class BaseController(ABC):
         self.lap_pub=rospy.Publisher(lap_pub, Int32, queue_size=5)
         
         self.key_sub=rospy.Subscriber(key_pub, String, self.key_callback)
-        self.plot_index=500
+        self.plot_index=450
 
     def key_callback(self, data:String):
         if data.data=="p":
@@ -376,13 +376,17 @@ class BaseController(ABC):
 
     def plot_mpc(self):
         
-
+        i=self.index
         data_array_x=self.controller.data['_x']
         data_array_u=self.controller.data['_u']
         x_data=data_array_x[:,0]
         y_data=data_array_x[:,1]
         v_data=data_array_u[:,1]
         delta_data=data_array_u[:,0]
+
+        x_c=self.path_data_x[i-len(x_data):i]
+        y_c=self.path_data_y[i-len(x_data):i]
+
 
 
         # fig = plt.figure(figsize=(10,5))
@@ -406,7 +410,7 @@ class BaseController(ABC):
         # #filepath="/figures/"+title +"blah"
         self.log_file_name=self.params['log_file_name']
         print(self.params['log_file_name'])
-        df=pd.DataFrame({'x': x_data, 'y': y_data, 'v': v_data, 'delta': delta_data }, columns=['x', 'y', 'v', 'delta'])
+        df=pd.DataFrame({'x': x_data, 'y': y_data, 'v': v_data, 'delta': delta_data, "x_c": x_c, "y_c": y_c }, columns=['x', 'y', 'v', 'delta', "x_c", "y_c"])
 
         df.to_csv(self.log_file_name)
 
