@@ -94,7 +94,8 @@
     <rosparam param="r_delta" subst_value="true">$(arg r_delta)</rosparam>
     <rosparam param="velocity" subst_value="true">$(arg velocity)</rosparam>
     <rosparam param="velocity_weight" subst_value="True">$(arg velocity_weight)</rosparam>
-
+  <rosparam param="log_file_name" subst_value="True">$(arg log_file_name)</rosparam>
+ 
      </node> 
 
  

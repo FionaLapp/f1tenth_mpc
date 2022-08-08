@@ -122,7 +122,11 @@ class BaseController(ABC):
         self.key_pub=rospy.Publisher(key_pub, String, queue_size=5)
         self.lap_pub=rospy.Publisher(lap_pub, Int32, queue_size=5)
         
+        self.key_sub=rospy.Subscriber(key_pub, String, self.key_callback)
         
+    def key_callback(self, data:String):
+        if data.data=="p":
+            self.plot_mpc()   
         
     
     def get_params(self):
@@ -164,6 +168,8 @@ class BaseController(ABC):
         params['velocity']=rospy.get_param(namespace+'velocity')
         params['world_name']=rospy.get_param(namespace+'world_name')
         params['velocity_weight']=rospy.get_param(namespace+"velocity_weight")
+        params['log_file_name']=rospy.get_param(namespace+"log_file_name")
+        
         return params    
     def on_lap_complete(self):
         if (Time.now()-self.lap_start_time).to_sec()>10: #otherwise it's just really close to the previous one
@@ -195,7 +201,7 @@ class BaseController(ABC):
         self.current_steering_angle=delta
         v=u[1]
         self.current_velocity=u[1]
-        rospy.loginfo("{}, {}".format(u[0], u[1]))
+        #rospy.loginfo("{}, {}".format(u[0], u[1]))
         #setup drive message
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()
@@ -367,37 +373,45 @@ class BaseController(ABC):
 
 
 
-    def plot_mpc(self, event):
+    def plot_mpc(self):
         
 
-        # data_array=self.controller.data['_x']
-        # print(data_array)
-        # x_data=data_array[:,0]
-        # y_data=data_array[:,1]
+        data_array_x=self.controller.data['_x']
+        data_array_u=self.controller.data['_u']
+        x_data=data_array_x[:,0]
+        y_data=data_array_x[:,1]
+        v_data=data_array_u[:,1]
+        delta_data=data_array_u[:,0]
 
-        #ig = plt.figure(figsize=(10,5))
+
+        # fig = plt.figure(figsize=(10,5))
 
         # plt.plot(x_data, y_data)
         # plt.xlabel('x position')
         # plt.ylabel('y position')
         # title="vehicle_path".format()
         # plt.title(title)
-        # plt.show()
+        # #plt.show()
 
-        fig=self.configure_graphics()
-        self._plotter.plot_results()
-        self._plotter.reset_axes()
-        plt.show()
-        title="parameter_plot"
-        directory=self.params['directory']+ "/src/figures/"
-        filepath=os.path.expanduser(directory+title + str(event.current_real)+".png")
+        # # fig=self.configure_graphics()
+        # # self._plotter.plot_results()
+        # # self._plotter.reset_axes()
+        # # plt.show()
+        # # title="parameter_plot"
+        # # directory=self.params['directory']+ "/src/figures/"
+        # # filepath=os.path.expanduser(directory+title + str(event.current_real)+".png")
         
-        #filepath=os.path.join(self.params['directory']), ("src"), ("figures"), (title + str(event.current_real))
-        #filepath="/figures/"+title + str(event.current_real)
-        
-        print(filepath)
-        fig.savefig(filepath, bbox_inches='tight', dpi=150)
-        plt.show()
+        # filepath=os.path.join(self.params['directory']), ("src"), ("racing"), ("figures"), (title +"blah")
+        # #filepath="/figures/"+title +"blah"
+        self.log_file_name=self.params['log_file_name']
+        print(self.params['log_file_name'])
+        df=pd.DataFrame({'x': x_data, 'y': y_data, 'v': v_data, 'delta': delta_data }, columns=['x', 'y', 'v', 'delta'])
+
+        df.to_csv(self.log_file_name)
+
+       
+        #fig.savefig(filepath, bbox_inches='tight', dpi=150)
+        #plt.show()
         
     def configure_graphics(self):
         """
