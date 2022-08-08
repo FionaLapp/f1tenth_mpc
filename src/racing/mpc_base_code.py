@@ -410,8 +410,14 @@ class BaseController(ABC):
         # #filepath="/figures/"+title +"blah"
         self.log_file_name=self.params['log_file_name']
         print(self.params['log_file_name'])
+        print(len(x_data))
+        print(len(y_data))
+        print(len(v_data))
+        print(len(delta_data))
+        print(len(x_c))
+        print(len(y_c))
         df=pd.DataFrame({'x': x_data, 'y': y_data, 'v': v_data, 'delta': delta_data, "x_c": x_c, "y_c": y_c }, columns=['x', 'y', 'v', 'delta', "x_c", "y_c"])
-
+        
         df.to_csv(self.log_file_name)
 
        
