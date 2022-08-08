@@ -17,8 +17,8 @@ sns.set_theme(context='notebook', style='darkgrid', palette='deep', font='sans-s
 
 cwd=sys.path[0]
 print(cwd)
-controller="FTG"
-csv_filepath=cwd+"/../logs/curve_FTG"#+plot_var+"curve"
+controller="PP2"
+csv_filepath=cwd+"/../logs/curve_"+controller#+plot_var+"curve"
 df=pd.read_csv(csv_filepath)
 
 #df.mean_laptime = df.mean_laptime.apply(pd.to_numeric, errors='coerce')
@@ -26,9 +26,12 @@ df=pd.read_csv(csv_filepath)
 #df = df.replace({np.nan: 0})    
 fig, ((ax1, ax2, ax3)) = plt.subplots(3, 1, figsize=(9, 14))
 cmap = plt.get_cmap('rainbow')
-cNorm  = colors.Normalize(vmin=4, vmax=7)
+cNorm  = colors.Normalize(vmin=3, vmax=7)
 scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
-ax1.plot(-df.x_c[27:], df.y_c[27:], linewidth=12, color=(0,0,0,0.25), label="track", zorder=-1)
+#ax1.plot(-df.x_c[9:], df.y_c[9:], linewidth=12, color=(0,0,0,0.25), label="track", zorder=-1)#ftg
+#ax1.plot(-df.x_c[165:], df.y_c[165:], linewidth=12, color=(0,0,0,0.25), label="track", zorder=-1)#pp1
+ax1.plot(-df.x_c[50:], df.y_c[50:], linewidth=12, color=(0,0,0,0.25), label="track", zorder=-1)#pp2
+
 ax1.scatter(-df.x, df.y, s=3, c=scalarMap.to_rgba(df.v), cmap='rainbow', label="path taken by "+ controller, norm=matplotlib.colors.SymLogNorm(linthresh=1, vmin=0, vmax=7))
 ax1.arrow(50, -50, 10, 0, color="k", label="direction of travel", length_includes_head=True,
           head_width=2.5, head_length=2.5)
@@ -86,6 +89,6 @@ plt.subplots_adjust(
                     hspace=0.7)
 #plt.axhline(y=74, xmin=0, xmax= 5/17)
 #plt.hlines(87, 0.1, 1.5, color='red')
-plt.show()
+#plt.show()
 
-#fig.savefig(cwd+"/"+plot_var+".png")
+fig.savefig(cwd+"/"+controller+"_curve.png")
