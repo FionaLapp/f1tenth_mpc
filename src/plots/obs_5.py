@@ -17,7 +17,7 @@ sns.set_theme(context='notebook', style='darkgrid', palette='deep', font='sans-s
 
 cwd=sys.path[0]
 print(cwd)
-num_obs=1
+num_obs=5
 csv_filepath=cwd+"/../logs/obs"+str(num_obs)#+plot_var+"curve"
 df=pd.read_csv(csv_filepath)
 
@@ -30,8 +30,8 @@ cNorm  = colors.Normalize(vmin=3, vmax=7)
 scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
 ax1.set_clip_on(False)
 
-ax1.annotate("y (m)", (-4, 1), fontsize="medium", annotation_clip=False)
-ax1.annotate("v (m/s)", ( df.x.max()+4, 1), fontsize="medium", annotation_clip=False)
+ax1.annotate("y (m)", (-20, 1), fontsize="medium", annotation_clip=False)
+ax1.annotate("v (m/s)", ( df.x.max()+20, 1), fontsize="medium", annotation_clip=False)
 
 #ax1.plot(-df.x_c[9:], df.y_c[9:], linewidth=12, color=(0,0,0,0.25), label="track", zorder=-1)#ftg
 #ax1.plot(-df.x_c[165:], df.y_c[165:], linewidth=12, color=(0,0,0,0.25), label="track", zorder=-1)#pp1
@@ -39,14 +39,15 @@ ax1.annotate("v (m/s)", ( df.x.max()+4, 1), fontsize="medium", annotation_clip=F
 j=num_obs
 xupper=20
 yupper=0.4
-factor=10
+factor=5
+factorx=4
 for k in range(j):
         for i in range (6):
             circ_rad=yupper/20
             ystart=0.2*(k%2)
             print(ystart)
-            x_pos=k*xupper/j+2
-            circle = plt.Circle((factor*x_pos, 0.5*factor*(ystart+i*2*(circ_rad+0.001))), factor*circ_rad, color='k')
+            x_pos=3+k*xupper/j+2
+            circle = plt.Circle((factorx*x_pos, factor*(ystart+i*2*(circ_rad+0.001))), factor*circ_rad, color='k')
             ax1.add_patch(circle)
 
 
@@ -56,7 +57,8 @@ ax1.scatter(df.x, df.y, s=3, c=scalarMap.to_rgba(df.v), cmap='rainbow', label="p
 # #ax1.annotate("direction of travel", xy=(80, -50), xytext=(50, -55),arrowprops=dict(arrowstyle="->"), color="k")
 scalarMap.set_array([])
 fig.colorbar(scalarMap,ax=ax1)
-ax1.legend()
+
+#ax1.legend()
 
 t=np.arange(len(df.v))*0.1
 ax1.set_ylim(0,2)
@@ -107,6 +109,6 @@ plt.subplots_adjust(
                     hspace=1.3)
 #plt.axhline(y=74, xmin=0, xmax= 5/17)
 #plt.hlines(87, 0.1, 1.5, color='red')
-plt.show()
+#plt.show()
 
-#fig.savefig(cwd+"/obs_"+str(num_obs)+".png")
+fig.savefig(cwd+"/obs_"+str(num_obs)+".png")
