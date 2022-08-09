@@ -18,7 +18,9 @@ sns.set_theme(context='notebook', style='darkgrid', palette='deep', font='sans-s
 cwd=sys.path[0]
 print(cwd)
 num_obs=5
-csv_filepath=cwd+"/../logs/obs"+str(num_obs)#+plot_var+"curve"
+#csv_filepath=cwd+"/../logs/obs"+str(num_obs)#+plot_var+"curve"
+csv_filepath=cwd+"/../logs/obs_high_delta"+str(num_obs)#+plot_var+"curve"
+
 df=pd.read_csv(csv_filepath)
 
 #df.mean_laptime = df.mean_laptime.apply(pd.to_numeric, errors='coerce')
@@ -26,7 +28,7 @@ df=pd.read_csv(csv_filepath)
 #df = df.replace({np.nan: 0})    
 fig, ((ax1, ax2, ax3)) = plt.subplots(3, 1, figsize=(8, 5))
 cmap = plt.get_cmap('rainbow')
-cNorm  = colors.Normalize(vmin=3, vmax=7)
+cNorm  = colors.Normalize(vmin=2.5, vmax=7)
 scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=cmap)
 ax1.set_clip_on(False)
 
@@ -111,4 +113,6 @@ plt.subplots_adjust(
 #plt.hlines(87, 0.1, 1.5, color='red')
 #plt.show()
 
-fig.savefig(cwd+"/obs_"+str(num_obs)+".png")
+#fig.savefig(cwd+"/obs_"+str(num_obs)+".png")
+
+fig.savefig(cwd+"/obs_high_delta"+str(num_obs)+".png")
