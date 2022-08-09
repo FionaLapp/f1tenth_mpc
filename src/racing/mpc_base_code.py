@@ -169,7 +169,7 @@ class BaseController(ABC):
         params['velocity']=rospy.get_param(namespace+'velocity')
         params['world_name']=rospy.get_param(namespace+'world_name')
         params['velocity_weight']=rospy.get_param(namespace+"velocity_weight")
-        params['log_file_name']=rospy.get_param(namespace+"log_file_name")
+        params['log_file_name']=rospy.get_param(namespace+"log_file_name", default=None)
         
         return params    
     def on_lap_complete(self):
@@ -417,7 +417,7 @@ class BaseController(ABC):
         print(len(x_c))
         print(len(y_c))
         df=pd.DataFrame({'x': x_data, 'y': y_data, 'v': v_data, 'delta': delta_data, "x_c": x_c, "y_c": y_c }, columns=['x', 'y', 'v', 'delta', "x_c", "y_c"])
-        
+            
         df.to_csv(self.log_file_name)
 
        
