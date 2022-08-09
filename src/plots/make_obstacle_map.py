@@ -12,27 +12,32 @@ import matplotlib
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 
-xupper=100
-fig=plt.figure(figsize=(xupper,4))
-ax=fig.gca()
-plt.xlim(0,xupper)
-yupper=4
-plt.ylim(0,yupper)
-lw=7
-#plt.plot([0,xupper], [0,0], linewidth=lw, color="k")
+xupper=20
+yupper=0.4
 
-#plt.plot([0,xupper], [yupper,yupper], linewidth=lw, color="k")
-plt.axis('off')
-for i in range (4):
-    circ_rad=0.2
-    x_pos=50
-    circle = plt.Circle((x_pos, circ_rad+i*2*(circ_rad+0.01)), circ_rad, color='k')
-    ax.add_patch(circle)
+for j in range (6):
+    fig=plt.figure(figsize=(xupper,yupper))
+    ax=fig.gca()
+    plt.xlim(0,xupper)
+    plt.ylim(0,yupper)
+    lw=7
+    #plt.plot([0,xupper], [0,0], linewidth=lw, color="k")
 
-plt.xticks([])
-plt.yticks([])
+    #plt.plot([0,xupper], [yupper,yupper], linewidth=lw, color="k")
+    plt.axis('off')
+    for k in range(j):
+        for i in range (6):
+            circ_rad=yupper/20
+            ystart=0.2*(k%2)
+            print(ystart)
+            x_pos=k*xupper/j+2
+            circle = plt.Circle((x_pos, ystart+i*2*(circ_rad+0.001)), circ_rad, color='k')
+            ax.add_patch(circle)
 
-cwd=sys.path[0]
-print(cwd)
-filepath=cwd+"/../maps/Obstacles/Obstacles.png"
-fig.savefig(filepath)
+    plt.xticks([])
+    plt.yticks([])
+
+    cwd=sys.path[0]
+    print(cwd)
+    filepath=cwd+"/../maps/Obstacles/Obstacles"+str(j)+".png"
+    fig.savefig(filepath)

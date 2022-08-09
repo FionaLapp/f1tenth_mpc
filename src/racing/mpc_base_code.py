@@ -75,6 +75,8 @@ class BaseController(ABC):
         print("Ns:{}".format(rospy.get_namespace()))
         #map_name=rospy.get_param(rospy.get_namespace()+'mpc/world_name')
         map_name=self.params['world_name']
+        if "Obstacles" in map_name:
+            map_name="Obstacles"
         pathfile_name=rospy.get_param(rospy.get_namespace()+'mpc/directory')+'/src/maps/'+map_name+'/'+map_name+'_centerline.csv'
         self.path_data=pd.read_csv(pathfile_name)
         self.path_length=self.path_data.shape[0]
@@ -189,7 +191,7 @@ class BaseController(ABC):
 
         #making the mpc calculation
         u =self.controller.make_step(x_state) 
-
+        rospy.loginfo("{}, {}".format(x_state[0], x_state[1]))
         #plotting the predicted  trajectorry
         x_pred=self.controller.data.prediction(('_x', 'x')).flatten()
         y_pred=self.controller.data.prediction(('_x', 'y')).flatten()
@@ -384,8 +386,8 @@ class BaseController(ABC):
         v_data=data_array_u[:,1]
         delta_data=data_array_u[:,0]
 
-        x_c=self.path_data_x[i-len(x_data):i]
-        y_c=self.path_data_y[i-len(x_data):i]
+        #x_c=self.path_data_x[i-len(x_data):i]
+        #y_c=self.path_data_y[i-len(x_data):i]
 
 
 
@@ -414,10 +416,11 @@ class BaseController(ABC):
         print(len(y_data))
         print(len(v_data))
         print(len(delta_data))
-        print(len(x_c))
-        print(len(y_c))
-        df=pd.DataFrame({'x': x_data, 'y': y_data, 'v': v_data, 'delta': delta_data, "x_c": x_c, "y_c": y_c }, columns=['x', 'y', 'v', 'delta', "x_c", "y_c"])
-            
+        #print(len(x_c))
+        #print(len(y_c))
+        #df=pd.DataFrame({'x': x_data, 'y': y_data, 'v': v_data, 'delta': delta_data, "x_c": x_c, "y_c": y_c }, columns=['x', 'y', 'v', 'delta', "x_c", "y_c"]) #curves
+        df=pd.DataFrame({'x': x_data, 'y': y_data, 'v': v_data, 'delta': delta_data}, columns=['x', 'y', 'v', 'delta']) #obstacles
+             
         df.to_csv(self.log_file_name)
 
        

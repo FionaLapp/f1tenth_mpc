@@ -91,7 +91,9 @@ class FTGController(mpc_base_code.BaseController):
             self.index= closest %self.path_length
             if np.abs(closest - self.path_length)<10:
                 super().on_lap_complete()
-            if np.abs(self.index-self.plot_index)<5:
+            #if np.abs(self.index-self.plot_index)<5:
+            if self.previous_x>40:
+                print("40")
                 self.key_pub.publish(String("p"))
             self.state= np.array([x,y, phi])
             self.make_mpc_step(self.state)
