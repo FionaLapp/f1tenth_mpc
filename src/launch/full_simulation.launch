@@ -50,7 +50,7 @@
   <arg name="w_start" if="$(eval arg('world_name')=='Nuerburgring')" value="-0.373"/>
   
   <!-- Launch a map from the maps folder-->
-  <arg name="map" default="$(find f1tenth_mpc)/src/maps/$(arg world_name)/$(arg world_name)_map.yaml"/>
+  <arg name="map" default="$(find f1tenth_mpc)/src/maps/Empty/Empty_map2.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
 
  <include file="$(find f1tenth_mpc)/src/launch/initialpose_node.launch" pass_all_args="true" />
