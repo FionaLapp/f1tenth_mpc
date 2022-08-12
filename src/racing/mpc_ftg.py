@@ -61,7 +61,7 @@ class FTGController(mpc_base_code.BaseController):
         
         super().setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
         
-        self.key_pub.publish(String("n"))
+        #self.key_pub.publish(String("n"))
         self.lap_start_time=Time.now()
         self.setup_finished=True
 
@@ -93,7 +93,7 @@ class FTGController(mpc_base_code.BaseController):
                 super().on_lap_complete()
             #if np.abs(self.index-self.plot_index)<5:
             if self.previous_x>80:
-                print("40")
+                #print("40")
                 self.key_pub.publish(String("p"))
             self.state= np.array([x,y, phi])
             self.make_mpc_step(self.state)

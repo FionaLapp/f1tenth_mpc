@@ -26,7 +26,7 @@
     <visual>
       <origin xyz="${wheelbase/2} 0 ${ground_offset+height/2}"/>
       <geometry>
-        <box size="${wheelbase} ${width} ${height}"/>
+        <box size="${wheelbase*2} ${width*2} ${height}"/>
       </geometry>
       <material name="red"/>
     </visual>

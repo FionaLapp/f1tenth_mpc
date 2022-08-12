@@ -53,7 +53,7 @@ class ControllerWithConstraints(mpc_base_code.BaseController):
         self.setup_mpc(max_speed=max_speed, time_step=time_step, n_horizon=self.params['n_horizon'])
         
 
-        self.key_pub.publish(String("n"))
+        #self.key_pub.publish(String("n"))
         self.lap_start_time=Time.now()
         
         self.setup_finished=True

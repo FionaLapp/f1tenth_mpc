@@ -63,7 +63,7 @@ class BaseController(ABC):
             max_speed=self.params['max_speed']        
         self.setup_mpc(max_speed=max_speed, n_horizon=self.params['n_horizon'], time_step=time_step)
         
-        self.key_pub.publish(String("n"))
+        #self.key_pub.publish(String("n"))
         self.lap_start_time=Time.now()
         self.setup_finished=True
         
@@ -178,7 +178,7 @@ class BaseController(ABC):
         if (Time.now()-self.lap_start_time).to_sec()>10: #otherwise it's just really close to the previous one
             self.lap_start_time=Time.now()
             self.laps_completed+=1
-            rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
+            #rospy.loginfo("Yay, you made it! {} laps!".format(self.laps_completed))
             self.lap_pub.publish(Int32(self.laps_completed))
         else: 
             pass 
@@ -191,7 +191,7 @@ class BaseController(ABC):
 
         #making the mpc calculation
         u =self.controller.make_step(x_state) 
-        rospy.loginfo("{}, {}".format(x_state[0], x_state[1]))
+        #rospy.loginfo("{}, {}".format(x_state[0], x_state[1]))
         #plotting the predicted  trajectorry
         x_pred=self.controller.data.prediction(('_x', 'x')).flatten()
         y_pred=self.controller.data.prediction(('_x', 'y')).flatten()
@@ -204,7 +204,7 @@ class BaseController(ABC):
         self.current_steering_angle=delta
         v=u[1]
         self.current_velocity=u[1]
-        #rospy.loginfo("{}, {}".format(u[0], u[1]))
+        rospy.loginfo("delta:{}, v:{}".format(u[0], u[1]))
         #setup drive message
         drive_msg = AckermannDriveStamped()
         drive_msg.header.stamp = rospy.Time.now()
@@ -411,11 +411,11 @@ class BaseController(ABC):
         # filepath=os.path.join(self.params['directory']), ("src"), ("racing"), ("figures"), (title +"blah")
         # #filepath="/figures/"+title +"blah"
         self.log_file_name=self.params['log_file_name']
-        print(self.params['log_file_name'])
-        print(len(x_data))
-        print(len(y_data))
-        print(len(v_data))
-        print(len(delta_data))
+        # print(self.params['log_file_name'])
+        # print(len(x_data))
+        # print(len(y_data))
+        # print(len(v_data))
+        # print(len(delta_data))
         #print(len(x_c))
         #print(len(y_c))
         #df=pd.DataFrame({'x': x_data, 'y': y_data, 'v': v_data, 'delta': delta_data, "x_c": x_c, "y_c": y_c }, columns=['x', 'y', 'v', 'delta', "x_c", "y_c"]) #curves
