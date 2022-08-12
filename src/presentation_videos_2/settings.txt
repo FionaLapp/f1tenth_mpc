@@ -1,0 +1,16 @@
+obstacles1: world_name:=Obstacles5 node_type:=ftg velocity_weight:=4.5 velocity:=6 r_v:=1.0 r_delta:=5.0 n_horizon:=5  does okay but slow
+
+obstacles2: world_name:=Obstacles5 node_type:=ftg velocity_weight:=2.5 velocity:=6 r_v:=1.0 r_delta:=1.0 n_horizon:=5  bit of oscillation
+
+obstacles3: world_name:=Obstacles5 node_type:=ftg velocity_weight:=2.5 velocity:=7 r_v:=1.0 r_delta:=1.0 n_horizon:=5 crash at full speed
+
+sochiftg: world_name:=Sochi node_type:=ftg velocity_weight:=3.5 velocity:=7 r_v:=1.0 r_delta:=4.0 n_horizon:=5
+
+sochipp1: world_name:=Sochi node_type:=centerline velocity_weight:=2.5 velocity:=7 r_v:=1.0 r_delta:=4.0 n_horizon:=5
+
+sochipp2: world_name:=Sochi node_type:=centerline_with_constraints velocity_weight:=1.5 velocity:=7 r_v:=1.0 r_delta:=7.0 n_horizon:=4
+
+austinftg: roslaunch f1tenth_mpc full_simulation.launch world_name:=Austin node_type:=ftg velocity_weight:=3.4 velocity:=7 r_v:=1.0 r_delta:=3.0 n_horizon:=5
+
+osc: world_name:=Sochi node_type:=centerline_with_constraints velocity_weight:=1.5 velocity:=7 r_v:=1.0 r_delta:=5.0 n_horizon:=5 
+
